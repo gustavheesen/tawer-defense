@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Tower Defense Game</title>
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>
+  <style>
+    html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; }
+    body { width: 100vw; height: 100vh; }
+    canvas { display: block; width: 100vw !important; height: 100vh !important; }
+  </style>
+</head>
+<body>
+<script>
+class MainScene extends Phaser.Scene {
+  constructor() {
+    super({ key: 'MainScene' });
+  }
+
+  preload() {
+    // no external assets needed
+    // Sound effects and music
+    this.load.audio('shoot', 'sounds/shoot.mp3');
+    this.load.audio('death', 'sounds/death.mp3');
+    this.load.audio('music', 'sounds/music.mp3');
+  }
+
+  create() {
+    // Map selection
+    this.selectedMap = null;
+    this.mapPaths = [
+      [ // Map 1: zig-zag
+        { x: 0, y: 300 },
+        { x: 200, y: 300 },
+        { x: 200, y: 100 },
+        { x: 400, y: 100 },
+        { x: 400, y: 500 },
+        { x: 600, y: 500 },
+        { x: 600, y: 200 },
+        { x: this.scale.width, y: 200 }
+      ],
+      [ // Map 2: S-curve
+        { x: 0, y: 100 },
+        { x: 150, y: 100 },
+        { x: 250, y: 500 },
+        { x: 400, y: 500 },
+        { x: 550, y: 100 },
+        { x: 700, y: 100 },
+        { x: this.scale.width, y: 400 }
+      ]
+    ];
+    this.showMapSelection();
+
+    // In create() (only once, at scene start)
+    this.shootSound = this.sound.add('shoot', { volume: 0.2 });
+    this.deathSound = this.sound.add('death', { volume: 0.4 });
+    this.music = this.sound.add('music', { volume: 0.15, loop: true });
+    this.music.play();
+  }
+
+  showMapSelection() {
+    this.add.rectangle(this.scale.width/2, this.scale.height/2, 500, 350, 0x222222, 0.95).setDepth(100);
+    this.add.text(this.scale.width/2, this.scale.height/2-140, 'Select a Map', { font: '32px Arial', fill: '#fff' }).setOrigin(0.5).setDepth(101);
+    // Map 1 preview
+    let g1 = this.add.graphics().setDepth(102);
+    g1.lineStyle(5, 0xffffff);
+    let p1 = this.mapPaths[0];
+    g1.beginPath();
+    g1.moveTo(p1[0].x/2+this.scale.width/2-180, p1[0].y/2+this.scale.height/2-30);
+    for (let i=1; i<p1.length; i++) g1.lineTo(p1[i].x/2+this.scale.width/2-180, p1[i].y/2+this.scale.height/2-30);
+    g1.strokePath();
+    let btn1 = this.add.rectangle(this.scale.width/2-180, this.scale.height/2+100, 120, 50, 0x00aa00).setDepth(103).setInteractive();
+    let txt1 = this.add.text(this.scale.width/2-180, this.scale.height/2+100, 'Map 1', { font: '22px Arial', fill: '#fff' }).setOrigin(0.5).setDepth(104);
+    // Map 2 preview
+    let g2 = this.add.graphics().setDepth(102);
+    g2.lineStyle(5, 0xffffff);
+    let p2 = this.mapPaths[1];
+    g2.beginPath();
+    g2.moveTo(p2[0].x/2+this.scale.width/2+180-350, p2[0].y/2+this.scale.height/2-30);
+    for (let i=1; i<p2.length; i++) g2.lineTo(p2[i].x/2+this.scale.width/2+180-350, p2[i].y/2+this.scale.height/2-30);
+    g2.strokePath();
+    let btn2 = this.add.rectangle(this.scale.width/2+180, this.scale.height/2+100, 120, 50, 0x0033cc).setDepth(103).setInteractive();
+    let txt2 = this.add.text(this.scale.width/2+180, this.scale.height/2+100, 'Map 2', { font: '22px Arial', fill: '#fff' }).setOrigin(0.5).setDepth(104);
+    // Custom Path button
+    let btnCustom = this.add.rectangle(this.scale.width/2, this.scale.height/2+170, 200, 50, 0xff00ff).setDepth(103).setInteractive();
+    let txtCustom = this.add.text(this.scale.width/2, this.scale.height/2+170, 'Custom Path', { font: '22px Arial', fill: '#fff' }).setOrigin(0.5).setDepth(104);
+    btn1.on('pointerdown', () => { this.startGameWithMap(0); });
+    btn2.on('pointerdown', () => { this.startGameWithMap(1); });
+    btnCustom.on('pointerdown', () => { this.startCustomPath(); });
+  }
+
+  startGameWithMap(mapIndex) {
+    this.selectedMap = mapIndex;
+    this.children.removeAll();
+    this.initGameWithPath(this.mapPaths[mapIndex]);
+  }
+
+  startCustomPath() {
+    this.children.removeAll();
+    this.customPathPoints = [];
+    this.customPathGraphics = this.add.graphics().setDepth(200);
+    let startX = 60, startY = this.scale.height/2;
+    let endX = this.scale.width-60, endY = this.scale.height/2;
+    this.startPoint = this.add.circle(startX, startY, 18, 0x00ff00).setDepth(202);
+    this.endPoint = this.add.circle(endX, endY, 18, 0xff0000).setDepth(202);
+    this.startPointText = this.add.text(startX, startY, 'Start', { font: '16px Arial', fill: '#000' }).setOrigin(0.5).setDepth(203);
+    this.endPointText = this.add.text(endX, endY, 'End', { font: '16px Arial', fill: '#000' }).setOrigin(0.5).setDepth(203);
+    this.isDrawingPath = false;
+    this.add.text(this.scale.width/2, 40, 'Draw a line from the green start to the red end.', { font: '24px Arial', fill: '#fff', backgroundColor: '#222' }).setOrigin(0.5).setDepth(201);
+    this.input.on('pointerdown', pointer => {
+      if (Phaser.Math.Distance.Between(pointer.x, pointer.y, startX, startY) < 22) {
+        this.isDrawingPath = true;
+        this.customPathPoints = [{ x: startX, y: startY }];
+        this.redrawCustomPath();
+      }
+    });
+    this.input.on('pointermove', pointer => {
+      if (this.isDrawingPath) {
+        this.customPathPoints.push({ x: pointer.x, y: pointer.y });
+        this.redrawCustomPath();
+      }
+    });
+    this.input.on('pointerup', pointer => {
+      if (this.isDrawingPath) {
+        // Only accept if released near the end point
+        if (Phaser.Math.Distance.Between(pointer.x, pointer.y, endX, endY) < 22) {
+          this.customPathPoints.push({ x: endX, y: endY });
+          this.isDrawingPath = false;
+          this.redrawCustomPath();
+        } else {
+          // Not close enough to end, cancel
+          this.isDrawingPath = false;
+          this.customPathPoints = [];
+          this.redrawCustomPath();
+        }
+      }
+    });
+    this.doneBtn = this.add.rectangle(this.scale.width-120, this.scale.height-60, 160, 50, 0x00cc00).setDepth(202).setInteractive();
+    this.doneBtnText = this.add.text(this.scale.width-120, this.scale.height-60, 'Done', { font: '22px Arial', fill: '#fff' }).setOrigin(0.5).setDepth(203);
+    this.doneBtn.on('pointerdown', () => {
+      if (this.customPathPoints.length >= 2 && this.customPathPoints[0] && this.customPathPoints[this.customPathPoints.length-1]) {
+        this.input.removeAllListeners();
+        this.children.removeAll();
+        // Use the path as drawn, do not resample
+        this.initGameWithPath(this.customPathPoints);
+      }
+    });
+  }
+
+  redrawCustomPath() {
+    this.customPathGraphics.clear();
+    this.customPathGraphics.lineStyle(4, 0xff00ff);
+    if (this.customPathPoints.length > 1) {
+      this.customPathGraphics.beginPath();
+      this.customPathGraphics.moveTo(this.customPathPoints[0].x, this.customPathPoints[0].y);
+      for (let i=1; i<this.customPathPoints.length; i++) {
+        this.customPathGraphics.lineTo(this.customPathPoints[i].x, this.customPathPoints[i].y);
+      }
+      this.customPathGraphics.strokePath();
+    }
+    // Draw points
+    if (this.customPathPoints.length > 0) {
+      for (let pt of this.customPathPoints) {
+        this.customPathGraphics.fillStyle(0xffffff, 1);
+        this.customPathGraphics.fillCircle(pt.x, pt.y, 6);
+      }
+    }
+  }
+
+  initGameWithPath(pathPoints) {
+    // arrays to track game objects
+    this.enemies = [];
+    this.bullets = [];
+    this.towers = [];
+
+    // game state
+    this.score = 0;
+    this.money = 200;
+    this.lives = 10;
+    this.wave = 1;
+    this.enemiesToSpawn = 5;
+    this.enemiesSpawned = 0;
+    this.waveInProgress = false;
+    this.towerCost = 50;
+    this.nextWaveTimer = 0;
+
+    // UI
+    this.scoreText = this.add.text(16, 16, 'Score: 0', { font: '24px Arial', fill: '#fff' }).setDepth(10);
+    this.moneyText = this.add.text(16, 48, 'Money: 200', { font: '24px Arial', fill: '#ff0' }).setDepth(10);
+    this.livesText = this.add.text(16, 80, 'Lives: 10', { font: '24px Arial', fill: '#f66' }).setDepth(10);
+    this.waveText = this.add.text(16, 112, 'Wave: 1', { font: '24px Arial', fill: '#0ff' }).setDepth(10);
+    this.gameOverText = this.add.text(this.scale.width/2, this.scale.height/2, '', { font: '48px Arial', fill: '#fff' }).setOrigin(0.5).setDepth(20);
+    this.highScore = parseInt(localStorage.getItem('td_highscore') || '0', 10);
+    this.highScoreText = this.add.text(16, 144, 'High Score: ' + this.highScore, { font: '24px Arial', fill: '#ff0' }).setDepth(10);
+
+    // Tower selection UI
+    this.towerTypes = [
+      { name: 'Basic', color: 0x00ff00, fireRate: 1000, cost: 50, type: 'basic' },
+      { name: 'Fast', color: 0x3399ff, fireRate: 400, cost: 80, type: 'fast' },
+      { name: 'Splash', color: 0xff9900, fireRate: 1600, cost: 120, type: 'splash' },
+      { name: 'Sniper', color: 0xaa00ff, fireRate: 2200, cost: 150, type: 'sniper' },
+      { name: 'Slow', color: 0x0099ff, fireRate: 1200, cost: 100, type: 'slow' }
+    ];
+    this.selectedTowerType = 0;
+    this.towerButtons = [];
+    this.towerTypes.forEach((type, i) => {
+      let btn = this.add.rectangle(180 + i*120, 32, 100, 40, type.color).setStrokeStyle(4, 0xffffff).setDepth(12).setInteractive();
+      let txt = this.add.text(180 + i*120, 32, `${type.name}\n$${type.cost}`, { font: '18px Arial', fill: '#000', align: 'center' }).setOrigin(0.5).setDepth(13);
+      btn.on('pointerdown', () => {
+        this.selectedTowerType = i;
+        this.updateTowerButtonHighlight();
+      });
+      this.towerButtons.push(btn);
+    });
+    this.updateTowerButtonHighlight();
+
+    // zig-zag path
+    this.pathPoints = pathPoints;
+
+    // draw the path
+    this.graphics = this.add.graphics();
+    this.graphics.lineStyle(3, 0xffffff);
+    this.graphics.beginPath();
+    this.graphics.moveTo(this.pathPoints[0].x, this.pathPoints[0].y);
+    for (let i = 1; i < this.pathPoints.length; i++) {
+      this.graphics.lineTo(this.pathPoints[i].x, this.pathPoints[i].y);
+    }
+    this.graphics.strokePath();
+
+    // Enemy types
+    this.enemyTypes = [
+      { name: 'Normal', color: 0xff0000, speed: 100, health: 3, score: 10, money: 15, weight: 0.5 },
+      { name: 'Fast', color: 0xffff00, speed: 180, health: 2, score: 8, money: 10, weight: 0.18 },
+      { name: 'Armored', color: 0x3399ff, speed: 60, health: 7, score: 20, money: 30, weight: 0.12 },
+      { name: 'Swarm', color: 0x00ffff, speed: 220, health: 1, score: 3, money: 4, weight: 0.13 },
+      { name: 'Regenerator', color: 0x00ff88, speed: 90, health: 5, score: 18, money: 22, weight: 0.06, regens: true },
+      { name: 'Boss', color: 0xff00ff, speed: 40, health: 40, score: 100, money: 120, weight: 0.01, boss: true }
+    ];
+
+    // Achievements
+    this.achievements = {
+      firstBlood: false,
+      noLivesLost: false,
+      bigEarner: false
+    };
+    this.achievementQueue = [];
+    this.achievementText = this.add.text(this.scale.width/2, 60, '', { font: '28px Arial', fill: '#ff0', backgroundColor: '#222' }).setOrigin(0.5).setDepth(200).setAlpha(0);
+    this.achievementsUnlocked = [];
+    this.livesAtWaveStart = this.lives;
+
+    // start first wave
+    this.startWave();
+
+    // place a tower wherever the player clicks, if enough money
+    this.input.on('pointerdown', pointer => {
+      // ignore if clicking on tower buttons
+      if (pointer.y < 60) return;
+      // check if clicking on a tower to upgrade
+      let clickedTower = this.towers.find(tower => Phaser.Math.Distance.Between(pointer.x, pointer.y, tower.sprite.x, tower.sprite.y) < 20);
+      if (clickedTower) {
+        this.tryUpgradeTower(clickedTower);
+        return;
+      }
+      let type = this.towerTypes[this.selectedTowerType];
+      if (this.money >= type.cost && !this.gameOver) {
+        this.placeTower(pointer.x, pointer.y, type);
+        this.money -= type.cost;
+        this.moneyText.setText('Money: ' + this.money);
+      }
+    });
+
+    // Pause and speed controls
+    this.isPaused = false;
+
+    // Sound
+    this.isMuted = false;
+    this.muteBtn = this.add.rectangle(this.scale.width - 60, 120, 100, 40, 0x222222).setStrokeStyle(3, 0xffffff).setDepth(12).setInteractive();
+    this.muteBtnText = this.add.text(this.scale.width - 60, 120, 'Mute', { font: '20px Arial', fill: '#fff' }).setOrigin(0.5).setDepth(13);
+    this.muteBtn.on('pointerdown', () => {
+      this.isMuted = !this.isMuted;
+      this.sound.mute = this.isMuted;
+      this.muteBtnText.setText(this.isMuted ? 'Unmute' : 'Mute');
+    });
+  }
+
+  startWave() {
+    this.enemiesToSpawn = 5 + (this.wave - 1) * 2;
+    this.enemiesSpawned = 0;
+    this.waveInProgress = true;
+    this.enemySpawnTimer = this.time.addEvent({
+      delay: 1000 - Math.min((this.wave-1)*100, 700),
+      callback: this.spawnEnemy,
+      callbackScope: this,
+      repeat: this.enemiesToSpawn - 1
+    });
+  }
+
+  spawnEnemy() {
+    // Pick a random enemy type based on weights
+    let type = this.pickEnemyType();
+    const start = this.pathPoints[0];
+    let sprite = this.add.circle(start.x, start.y, 16, type.color);
+    let enemy = {
+      sprite: sprite,
+      pathIndex: 1,
+      baseSpeed: type.speed,
+      type: type,
+      health: type.health,
+      maxHealth: type.health
+    };
+    this.enemies.push(enemy);
+  }
+
+  placeTower(x, y, type) {
+    let sprite = this.add.rectangle(x, y, 32, 32, type.color).setInteractive({ draggable: true });
+    let cooldownBar = this.add.rectangle(x, y+24, 32, 4, 0xffff00).setScale(0,1);
+    cooldownBar.setDepth(11);
+    let upgradeText = this.add.text(x, y-28, 'Lv.1', { font: '14px Arial', fill: '#fff' }).setOrigin(0.5).setDepth(12);
+    let tower = {
+      sprite: sprite,
+      range: type.type === 'sniper' ? 320 : (type.type === 'splash' ? 120 : 150),
+      fireRate: type.fireRate,
+      lastFired: 0,
+      cooldownBar: cooldownBar,
+      level: 1,
+      upgradeText: upgradeText,
+      upgradeCost: 60,
+      towerType: type.type
+    };
+    this.towers.push(tower);
+    // Make tower draggable
+    this.input.setDraggable(sprite);
+    sprite.on('drag', (pointer, dragX, dragY) => {
+      sprite.x = dragX;
+      sprite.y = dragY;
+      cooldownBar.x = dragX;
+      cooldownBar.y = dragY + 24;
+      upgradeText.x = dragX;
+      upgradeText.y = dragY - 28;
+    });
+  }
+
+  tryUpgradeTower(tower) {
+    if (this.money >= tower.upgradeCost && tower.level < 5) {
+      this.money -= tower.upgradeCost;
+      this.moneyText.setText('Money: ' + this.money);
+      tower.level++;
+      tower.range += 20;
+      tower.fireRate = Math.max(150, tower.fireRate - 120);
+      tower.upgradeCost = Math.floor(tower.upgradeCost * 1.5);
+      tower.upgradeText.setText('Lv.' + tower.level);
+      // flash effect
+      this.tweens.add({ targets: tower.sprite, alpha: 0.3, yoyo: true, duration: 80, repeat: 2 });
+    } else if (tower.level < 5) {
+      // not enough money, flash red
+      this.tweens.add({ targets: tower.sprite, fillAlpha: 0.3, yoyo: true, duration: 80, repeat: 2, onComplete: () => tower.sprite.setFillStyle(tower.sprite.fillColor) });
+    }
+  }
+
+  update(time, delta) {
+    if (this.gameOver || this.isPaused) return;
+    if (!this.towers || !this.enemies || !this.bullets) return;
+
+    // update upgrade text positions
+    (this.towers || []).forEach(tower => {
+      tower.upgradeText.x = tower.sprite.x;
+      tower.upgradeText.y = tower.sprite.y - 28;
+    });
+
+    // Move enemies along the path (from scratch)
+    this.enemies = this.enemies.filter(enemy => {
+      // If enemy has reached the end, remove it
+      if (enemy.pathIndex >= this.pathPoints.length) {
+        enemy.sprite.destroy();
+        this.lives--;
+        this.livesText.setText('Lives: ' + this.lives);
+        if (this.lives <= 0) this.endGame();
+        return false;
+      }
+      // Get current and next path points
+      let prev = this.pathPoints[enemy.pathIndex - 1];
+      let next = this.pathPoints[enemy.pathIndex];
+      if (!next) return true; // Defensive: should not happen
+      // Move towards next point
+      let dx = next.x - enemy.sprite.x;
+      let dy = next.y - enemy.sprite.y;
+      let dist = Math.hypot(dx, dy);
+      let moveDist = enemy.baseSpeed * delta / 1000;
+      if (dist <= moveDist) {
+        // Snap to next point and increment pathIndex
+        enemy.sprite.x = next.x;
+        enemy.sprite.y = next.y;
+        enemy.pathIndex++;
+      } else {
+        // Move proportionally
+        enemy.sprite.x += (dx / dist) * moveDist;
+        enemy.sprite.y += (dy / dist) * moveDist;
+      }
+      return true;
+    });
+
+    // Let towers fire at nearest enemy in range
+    (this.towers || []).forEach(tower => {
+      // cooldown bar
+      let cooldown = Math.min(1, (time - tower.lastFired) / tower.fireRate);
+      tower.cooldownBar.setScale(cooldown, 1);
+      tower.cooldownBar.x = tower.sprite.x;
+      tower.cooldownBar.y = tower.sprite.y + 24;
+      if (time > tower.lastFired + tower.fireRate) {
+        let target = this.getNearestEnemy(tower);
+        if (target) {
+          if (tower.towerType === 'splash') {
+            this.fireSplash(tower, target);
+          } else if (tower.towerType === 'sniper') {
+            this.fireSniper(tower, target);
+          } else if (tower.towerType === 'slow') {
+            this.fireSlow(tower, target);
+          } else {
+            this.fireBullet(tower, target);
+          }
+          tower.lastFired = time;
+        }
+      }
+    });
+
+    // Update bullets, check for collisions
+    this.bullets = this.bullets.filter(bullet => {
+      // Home in slightly on the target for even more accuracy
+      if (bullet.target && this.enemies.includes(bullet.target)) {
+        let dx = bullet.target.sprite.x - bullet.sprite.x;
+        let dy = bullet.target.sprite.y - bullet.sprite.y;
+        let d = Math.hypot(dx, dy);
+        if (d > 0) {
+          let speed = 600;
+          bullet.vx = (dx / d) * speed;
+          bullet.vy = (dy / d) * speed;
+        }
+      }
+      bullet.sprite.x += bullet.vx * delta / 1000;
+      bullet.sprite.y += bullet.vy * delta / 1000;
+
+      // collide with any enemy
+      let hit = false;
+      (this.enemies || []).forEach((enemy, i) => {
+        let dx = enemy.sprite.x - bullet.sprite.x;
+        let dy = enemy.sprite.y - bullet.sprite.y;
+        if (Math.hypot(dx, dy) < 12 && !hit) { // smaller threshold for more precise hit
+          // Splash tower: area damage
+          if (bullet.splash) {
+            (this.enemies || []).forEach((e2, j) => {
+              let dd = Math.hypot(e2.sprite.x - bullet.sprite.x, e2.sprite.y - bullet.sprite.y);
+              if (dd < 40) {
+                e2.health -= 1;
+                if (e2.health <= 0) {
+                  e2.sprite.destroy();
+                  this.enemies.splice(j, 1);
+                  if (this.deathSound) this.deathSound.play();
+                  this.score += e2.type.score;
+                  this.money += e2.type.money;
+                  this.scoreText.setText('Score: ' + this.score);
+                  this.moneyText.setText('Money: ' + this.money);
+                  if (!this.achievements.firstBlood) {
+                    this.achievements.firstBlood = true;
+                    this.queueAchievement('First Blood: Destroy your first enemy!');
+                    this.achievementsUnlocked.push('First Blood');
+                  }
+                  if (!this.achievements.bigEarner && this.money >= 500) {
+                    this.achievements.bigEarner = true;
+                    this.queueAchievement('Big Earner: Reach 500 money!');
+                    this.achievementsUnlocked.push('Big Earner');
+                  }
+                }
+              }
+            });
+            bullet.sprite.destroy();
+            hit = true;
+          } else if (bullet.sniper) {
+            enemy.health -= 4;
+            bullet.sprite.destroy();
+            hit = true;
+            if (enemy.health <= 0) {
+              enemy.sprite.destroy();
+              this.enemies.splice(i, 1);
+              if (this.deathSound) this.deathSound.play();
+              this.score += enemy.type.score;
+              this.money += enemy.type.money;
+              this.scoreText.setText('Score: ' + this.score);
+              this.moneyText.setText('Money: ' + this.money);
+              if (!this.achievements.firstBlood) {
+                this.achievements.firstBlood = true;
+                this.queueAchievement('First Blood: Destroy your first enemy!');
+                this.achievementsUnlocked.push('First Blood');
+              }
+              if (!this.achievements.bigEarner && this.money >= 500) {
+                this.achievements.bigEarner = true;
+                this.queueAchievement('Big Earner: Reach 500 money!');
+                this.achievementsUnlocked.push('Big Earner');
+              }
+            }
+          } else if (bullet.slow) {
+            enemy.health -= 1;
+            enemy.slowed = 1.5;
+            bullet.sprite.destroy();
+            hit = true;
+            if (enemy.health <= 0) {
+              enemy.sprite.destroy();
+              this.enemies.splice(i, 1);
+              if (this.deathSound) this.deathSound.play();
+              this.score += enemy.type.score;
+              this.money += enemy.type.money;
+              this.scoreText.setText('Score: ' + this.score);
+              this.moneyText.setText('Money: ' + this.money);
+              if (!this.achievements.firstBlood) {
+                this.achievements.firstBlood = true;
+                this.queueAchievement('First Blood: Destroy your first enemy!');
+                this.achievementsUnlocked.push('First Blood');
+              }
+              if (!this.achievements.bigEarner && this.money >= 500) {
+                this.achievements.bigEarner = true;
+                this.queueAchievement('Big Earner: Reach 500 money!');
+                this.achievementsUnlocked.push('Big Earner');
+              }
+            }
+          } else {
+            enemy.health -= 1;
+            bullet.sprite.destroy();
+            hit = true;
+            if (enemy.health <= 0) {
+              enemy.sprite.destroy();
+              this.enemies.splice(i, 1);
+              if (this.deathSound) this.deathSound.play();
+              this.score += enemy.type.score;
+              this.money += enemy.type.money;
+              this.scoreText.setText('Score: ' + this.score);
+              this.moneyText.setText('Money: ' + this.money);
+              if (!this.achievements.firstBlood) {
+                this.achievements.firstBlood = true;
+                this.queueAchievement('First Blood: Destroy your first enemy!');
+                this.achievementsUnlocked.push('First Blood');
+              }
+              if (!this.achievements.bigEarner && this.money >= 500) {
+                this.achievements.bigEarner = true;
+                this.queueAchievement('Big Earner: Reach 500 money!');
+                this.achievementsUnlocked.push('Big Earner');
+              }
+            }
+          }
+        }
+      });
+
+      // remove if hit or out of bounds
+      if (hit ||
+          bullet.sprite.x < 0 ||
+          bullet.sprite.x > game.scale.width ||
+          bullet.sprite.y < 0 ||
+          bullet.sprite.y > game.scale.height) {
+        if (!hit) bullet.sprite.destroy();
+        return false;
+      }
+      return true;
+    });
+
+    // Start next wave if all enemies are gone and not in progress
+    if (!this.waveInProgress && this.enemies.length === 0 && this.time.now > this.nextWaveTimer) {
+      // Achievement: No Lives Lost
+      if (!this.achievements.noLivesLost && this.lives === this.livesAtWaveStart && this.wave > 1) {
+        this.achievements.noLivesLost = true;
+        this.queueAchievement('No Lives Lost: Finish a wave with all lives!');
+        this.achievementsUnlocked.push('No Lives Lost');
+      }
+      this.wave++;
+      this.waveText.setText('Wave: ' + this.wave);
+      this.livesAtWaveStart = this.lives;
+      this.startWave();
+    }
+  }
+
+  endGame() {
+    this.gameOver = true;
+    this.gameOverText.setText('Game Over!');
+    (this.towers || []).forEach(tower => tower.cooldownBar.destroy());
+    // Show unlocked achievements
+    if (this.achievementsUnlocked.length > 0) {
+      let achv = this.achievementsUnlocked.map(a => '🏆 ' + a).join('\n');
+      this.add.text(this.scale.width/2, this.scale.height/2+80, 'Achievements:\n' + achv, { font: '28px Arial', fill: '#ff0', align: 'center' }).setOrigin(0.5).setDepth(21);
+    }
+  }
+
+  getNearestEnemy(tower) {
+    let nearest = null;
+    let minDist = Infinity;
+    (this.enemies || []).forEach(enemy => {
+      let dx = enemy.sprite.x - tower.sprite.x;
+      let dy = enemy.sprite.y - tower.sprite.y;
+      let d = Math.hypot(dx, dy);
+      if (d < tower.range && d < minDist) {
+        minDist = d;
+        nearest = enemy;
+      }
+    });
+    return nearest;
+  }
+
+  fireBullet(tower, enemy) {
+    let dx = enemy.sprite.x - tower.sprite.x;
+    let dy = enemy.sprite.y - tower.sprite.y;
+    let d = Math.hypot(dx, dy);
+    let speed = 600; // Increased bullet speed for better accuracy
+    let vx = (dx / d) * speed;
+    let vy = (dy / d) * speed;
+    let sprite = this.add.circle(tower.sprite.x, tower.sprite.y, 5, 0xffff00);
+    if (this.shootSound) this.shootSound.play();
+    // Animate bullet: fade out
+    this.tweens.add({ targets: sprite, alpha: 0.2, duration: 400, yoyo: false });
+    this.bullets.push({ sprite, vx, vy, target: enemy });
+  }
+
+  fireSplash(tower, enemy) {
+    let dx = enemy.sprite.x - tower.sprite.x;
+    let dy = enemy.sprite.y - tower.sprite.y;
+    let d = Math.hypot(dx, dy);
+    let speed = 400;
+    let vx = (dx / d) * speed;
+    let vy = (dy / d) * speed;
+    let sprite = this.add.circle(tower.sprite.x, tower.sprite.y, 8, 0xff9900);
+    if (this.shootSound) this.shootSound.play();
+    this.tweens.add({ targets: sprite, alpha: 0.2, duration: 400, yoyo: false });
+    this.bullets.push({ sprite, vx, vy, target: enemy, splash: true, tower });
+  }
+
+  fireSniper(tower, enemy) {
+    let dx = enemy.sprite.x - tower.sprite.x;
+    let dy = enemy.sprite.y - tower.sprite.y;
+    let d = Math.hypot(dx, dy);
+    let speed = 1200;
+    let vx = (dx / d) * speed;
+    let vy = (dy / d) * speed;
+    let sprite = this.add.rectangle(tower.sprite.x, tower.sprite.y, 4, 16, 0xaa00ff);
+    if (this.shootSound) this.shootSound.play();
+    this.tweens.add({ targets: sprite, alpha: 0.2, duration: 400, yoyo: false });
+    this.bullets.push({ sprite, vx, vy, target: enemy, sniper: true });
+  }
+
+  fireSlow(tower, enemy) {
+    let dx = enemy.sprite.x - tower.sprite.x;
+    let dy = enemy.sprite.y - tower.sprite.y;
+    let d = Math.hypot(dx, dy);
+    let speed = 600;
+    let vx = (dx / d) * speed;
+    let vy = (dy / d) * speed;
+    let sprite = this.add.circle(tower.sprite.x, tower.sprite.y, 7, 0x0099ff);
+    if (this.shootSound) this.shootSound.play();
+    this.tweens.add({ targets: sprite, alpha: 0.2, duration: 400, yoyo: false });
+    this.bullets.push({ sprite, vx, vy, target: enemy, slow: true });
+  }
+
+  updateTowerButtonHighlight() {
+    (this.towerButtons || []).forEach((btn, i) => {
+      btn.setStrokeStyle(4, i === this.selectedTowerType ? 0xffff00 : 0xffffff);
+    });
+  }
+
+  queueAchievement(msg) {
+    this.achievementQueue.push(msg);
+    if (this.achievementQueue.length === 1) this.showNextAchievement();
+  }
+
+  showNextAchievement() {
+    if (this.achievementQueue.length === 0) return;
+    let msg = this.achievementQueue[0];
+    this.achievementText.setText(msg);
+    this.tweens.add({
+      targets: this.achievementText,
+      alpha: 1,
+      duration: 200,
+      yoyo: false,
+      onComplete: () => {
+        this.time.delayedCall(1800, () => {
+          this.tweens.add({
+            targets: this.achievementText,
+            alpha: 0,
+            duration: 300,
+            onComplete: () => {
+              this.achievementQueue.shift();
+              this.showNextAchievement();
+            }
+          });
+        });
+      }
+    });
+  }
+
+  pickEnemyType() {
+    let totalWeight = this.enemyTypes.reduce((sum, t) => sum + t.weight, 0);
+    let r = Math.random() * totalWeight;
+    let acc = 0;
+    for (let t of this.enemyTypes) {
+      acc += t.weight;
+      if (r < acc) return t;
+    }
+    return this.enemyTypes[0];
+  }
+}
+
+const config = {
+  type: Phaser.AUTO,
+  width: window.innerWidth,
+  height: window.innerHeight,
+  backgroundColor: '#222222',
+  physics: { default: 'arcade' },
+  scene: MainScene
+};
+
+const game = new Phaser.Game(config);
+
+window.addEventListener('resize', () => {
+  game.scale.resize(window.innerWidth, window.innerHeight);
+});
+</script>
+</body>
+</html> 
