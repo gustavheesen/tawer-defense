@@ -11,7 +11,7 @@ function angleDiff(a, b) {
 export class LaserTower extends Tower {
   constructor(tileX, tileY, mapConfig, canvas) {
     super(tileX, tileY, mapConfig, canvas);
-    this.range = 120;
+    this.range = 320;
     this.fireRate = 2.5;
     this.cooldown = 0;
     this.turretTurnSpeed = Math.PI; // 180 deg/sec

@@ -11,7 +11,7 @@ function angleDiff(a, b) {
 export class CannonTower extends Tower {
   constructor(tileX, tileY, mapConfig, canvas) {
     super(tileX, tileY, mapConfig, canvas);
-    this.range = 100;
+    this.range = 200;
     this.fireRate = 0.7;
     this.cooldown = 0;
     this.turretTurnSpeed = Math.PI / 4; // 45 deg/sec
