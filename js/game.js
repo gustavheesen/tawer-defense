@@ -12,6 +12,7 @@ import { CannonProjectile } from './projectiles/bullet.js';
 import { LaserProjectile } from './projectiles/laserProjectile.js';
 import { SlowProjectile } from './projectiles/slowProjectile.js';
 import { path as enemyPath } from './maps/map1.js';
+import { SpiderEnemy } from './enemies/spiderEnemy.js';
 
 function getPathTiles(path) {
   const tiles = new Set();
@@ -78,7 +79,7 @@ export class Game {
   }
 
   startWave() {
-    // Spawn a mix of tanks and infantry
+    // Spawn a mix of tanks, infantry, and fast enemies
     for (let i = 0; i < 3; i++) {
       setTimeout(() => {
         this.enemies.push(new TankEnemy(enemyPath, this.config.map, this.canvas));
@@ -88,6 +89,11 @@ export class Game {
       setTimeout(() => {
         this.enemies.push(new InfantryEnemy(enemyPath, this.config.map, this.canvas));
       }, i * 700 + 600);
+    }
+    for (let i = 0; i < 4; i++) {
+      setTimeout(() => {
+        this.enemies.push(new SpiderEnemy(enemyPath, this.config.map, this.canvas));
+      }, i * 500 + 300);
     }
   }
 
