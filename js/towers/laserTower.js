@@ -53,16 +53,51 @@ export class LaserTower extends Tower {
     }
   }
 
+  drawBase(ctx, cx, cy, tileSize) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    // Draw shadow/leg
+    ctx.fillStyle = '#222';
+    ctx.fillRect(-tileSize * 0.11, tileSize * 0.22, tileSize * 0.22, tileSize * 0.13);
+    ctx.fillRect(-tileSize * 0.05, tileSize * 0.32, tileSize * 0.10, tileSize * 0.13);
+    // Draw main body (red, blocky)
+    ctx.strokeStyle = '#111';
+    ctx.lineWidth = 3;
+    ctx.fillStyle = '#b71c1c';
+    ctx.fillRect(-tileSize * 0.22, -tileSize * 0.18, tileSize * 0.44, tileSize * 0.28);
+    ctx.strokeRect(-tileSize * 0.22, -tileSize * 0.18, tileSize * 0.44, tileSize * 0.28);
+    // Draw upper body (darker red)
+    ctx.fillStyle = '#c62828';
+    ctx.fillRect(-tileSize * 0.13, -tileSize * 0.28, tileSize * 0.26, tileSize * 0.13);
+    ctx.strokeRect(-tileSize * 0.13, -tileSize * 0.28, tileSize * 0.26, tileSize * 0.13);
+    // Draw left side block (shadow)
+    ctx.fillStyle = '#8d1919';
+    ctx.fillRect(-tileSize * 0.28, -tileSize * 0.13, tileSize * 0.10, tileSize * 0.18);
+    ctx.strokeRect(-tileSize * 0.28, -tileSize * 0.13, tileSize * 0.10, tileSize * 0.18);
+    ctx.restore();
+  }
+
   drawTurret(ctx, cx, cy, tileSize) {
     ctx.save();
     ctx.translate(cx, cy);
     ctx.rotate(this.turretAngle);
-    ctx.strokeStyle = '#fff';
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.lineTo(tileSize / 2.2, 0);
-    ctx.stroke();
+    // Barrel (yellow/orange)
+    ctx.strokeStyle = '#111';
+    ctx.lineWidth = 3;
+    ctx.fillStyle = '#ffb300';
+    ctx.fillRect(tileSize * 0.10, -tileSize * 0.07, tileSize * 0.22, tileSize * 0.14);
+    ctx.strokeRect(tileSize * 0.10, -tileSize * 0.07, tileSize * 0.22, tileSize * 0.14);
+    // Barrel tip (orange)
+    ctx.fillStyle = '#ff8f00';
+    ctx.fillRect(tileSize * 0.32, -tileSize * 0.10, tileSize * 0.13, tileSize * 0.20);
+    ctx.strokeRect(tileSize * 0.32, -tileSize * 0.10, tileSize * 0.13, tileSize * 0.20);
+    // Turret head (red)
+    ctx.fillStyle = '#d32f2f';
+    ctx.fillRect(-tileSize * 0.05, -tileSize * 0.11, tileSize * 0.18, tileSize * 0.22);
+    ctx.strokeRect(-tileSize * 0.05, -tileSize * 0.11, tileSize * 0.18, tileSize * 0.22);
+    // Turret head highlight (lighter red)
+    ctx.fillStyle = '#e57373';
+    ctx.fillRect(0, -tileSize * 0.07, tileSize * 0.06, tileSize * 0.14);
     ctx.restore();
   }
 
@@ -70,12 +105,8 @@ export class LaserTower extends Tower {
     const tileSize = Math.min(this.canvas.width / this.mapConfig.width, this.canvas.height / this.mapConfig.height);
     const cx = this.tileX * tileSize + tileSize / 2;
     const cy = this.tileY * tileSize + tileSize / 2;
-    // Draw base
     ctx.save();
-    ctx.fillStyle = 'magenta';
-    ctx.beginPath();
-    ctx.arc(cx, cy, tileSize / 3, 0, 2 * Math.PI);
-    ctx.fill();
+    this.drawBase(ctx, cx, cy, tileSize);
     this.drawTurret(ctx, cx, cy, tileSize);
     ctx.restore();
   }
