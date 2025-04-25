@@ -12,6 +12,7 @@ import { CannonProjectile } from './projectiles/bullet.js';
 import { LaserProjectile } from './projectiles/laserProjectile.js';
 import { SlowProjectile } from './projectiles/slowProjectile.js';
 import { path as enemyPath } from './maps/map1.js';
+import { SpiderEnemy } from './enemies/spiderEnemy.js';
 
 function getPathTiles(path) {
   const tiles = new Set();
