@@ -8,7 +8,7 @@ export function loadConfig() {
     // Base fire rate for all towers (shots per second)
     towerFireRate: 1,
     // Difficulty multiplier (affects enemy health, spawn rate, etc.)
-    difficulty: 50,
+    difficulty: 1,
     // Starting money for the player
     startingMoney: 100,
     // Number of lives at the start
