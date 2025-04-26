@@ -10,8 +10,8 @@ function angleDiff(a, b) {
 }
 
 export class CannonTower extends Tower {
-  constructor(tileX, tileY, mapConfig, canvas) {
-    super(tileX, tileY, mapConfig, canvas);
+  constructor(tileX, tileY, mapConfig, canvas, path) {
+    super(tileX, tileY, mapConfig, canvas, path);
     const config = loadConfig();
     this.rangeTiles = 5; // Tiles
     this.projectileSpeedTiles = config.baseProjectileSpeed * 0.8; // Tiles per second

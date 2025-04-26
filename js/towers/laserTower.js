@@ -10,8 +10,8 @@ function angleDiff(a, b) {
 }
 
 export class LaserTower extends Tower {
-  constructor(tileX, tileY, mapConfig, canvas) {
-    super(tileX, tileY, mapConfig, canvas);
+  constructor(tileX, tileY, mapConfig, canvas, path) {
+    super(tileX, tileY, mapConfig, canvas, path);
     const config = loadConfig();
     this.rangeTiles = 8; // Tiles
     this.projectileSpeedTiles = config.baseProjectileSpeed * 1.2; // Tiles per second

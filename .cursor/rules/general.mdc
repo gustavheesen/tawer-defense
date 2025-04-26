@@ -1,10 +1,10 @@
 ---
-description:
-globs:
+description: 
+globs: 
 alwaysApply: true
 ---
+always go ahead and execute the plan and apply the changes to the file. dont wait for user input. 
 
-# Your rule content
+always put rendering into its own file. each object renders from its own file.
 
-- You can @ files here
-- You can use markdown but dont have to
+always create a new file for a new object / feature. 

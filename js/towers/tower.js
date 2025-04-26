@@ -2,7 +2,9 @@ import { loadConfig } from '../config.js';
 import { getTileSize } from '../utils.js';
 
 export class Tower {
-  constructor(tileX, tileY, mapConfig, canvas) {
+  constructor(tileX, tileY, mapConfig, canvas, path) {
+
+
     const config = loadConfig();
     this.tileX = tileX;
     this.tileY = tileY;
@@ -13,6 +15,10 @@ export class Tower {
     this.cooldown = 0;
     this.turretAngle = 0; // radians
     this.turretTurnSpeed = Math.PI; // radians per second (180 deg/sec)
+    // Store path start point for idle aiming
+    this.pathStart = path?.[0] || null;
+    
+
   }
 
   update(delta, enemies, projectiles) {
@@ -21,6 +27,7 @@ export class Tower {
     const cx = this.tileX * tileSize + tileSize / 2;
     const cy = this.tileY * tileSize + tileSize / 2;
     const rangePixels = this.rangeTiles * tileSize;
+
     let nearest = null;
     let nearestDist = Infinity;
     let targetAngle = this.turretAngle;
@@ -34,6 +41,16 @@ export class Tower {
         targetAngle = Math.atan2(dy, dx);
       }
     }
+
+    // If no enemy in range, aim at path start point
+    if (!nearest && this.pathStart) {
+
+      const startX = this.pathStart.x * tileSize + tileSize / 2;
+      const startY = this.pathStart.y * tileSize + tileSize / 2;
+      targetAngle = Math.atan2(startY - cy, startX - cx);
+
+    }
+
     // Rotate turret toward target
     function angleDiff(a, b) {
       let d = a - b;
@@ -48,6 +65,7 @@ export class Tower {
     } else {
       this.turretAngle += Math.sign(diff) * maxTurn;
     }
+
     // Only fire if aimed within 5 degrees
     if (nearest && this.cooldown <= 0 && Math.abs(angleDiff(targetAngle, this.turretAngle)) < 0.087) {
       this.fireProjectile(cx, cy, projectiles, tileSize);

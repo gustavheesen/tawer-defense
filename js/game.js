@@ -14,6 +14,7 @@ import { SlowProjectile } from './projectiles/slowProjectile.js';
 import { path as enemyPath } from './maps/map1.js';
 import { SpiderEnemy } from './enemies/spiderEnemy.js';
 import { getTileSize } from './utils.js';
+// import { updateSidebarHUD } from './main.js';
 
 function getPathTiles(path) {
   const tiles = new Set();
@@ -70,9 +71,11 @@ export class Game {
     if (this.pathTiles.has(`${tileX},${tileY}`)) return;
     // Prevent placing on another tower
     if (this.towers.some(t => t.tileX === tileX && t.tileY === tileY)) return;
+    
+    
     // Place tower with type
     const TowerClass = TOWER_CLASSES[this.selectedTowerType] || CannonTower;
-    this.towers.push(new TowerClass(tileX, tileY, this.config.map, this.canvas));
+    this.towers.push(new TowerClass(tileX, tileY, this.config.map, this.canvas, this.path));
   }
 
   start() {
@@ -97,6 +100,7 @@ export class Game {
         this.enemies.push(new SpiderEnemy(this.path, this.config.map, this.canvas));
       }, i * 500 + 300);
     }
+    // if (typeof window.updateSidebarHUD === 'function') window.updateSidebarHUD(this, this.score, this.lives, this.currentWave);
   }
 
   loop(timestamp) {
@@ -125,6 +129,7 @@ export class Game {
     }
     // Remove dead projectiles
     this.projectiles = this.projectiles.filter(p => p.alive);
+    // if (typeof window.updateSidebarHUD === 'function') window.updateSidebarHUD(this, this.score, this.lives, this.currentWave);
   }
 
   render() {

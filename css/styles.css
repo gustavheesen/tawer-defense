@@ -3,19 +3,90 @@ body {
   color: #fff;
   font-family: Arial, sans-serif;
   text-align: center;
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  display: flex;
+  flex-direction: row;
+}
+#sidebar {
+  width: 220px;
+  min-width: 180px;
+  max-width: 320px;
+  background: linear-gradient(180deg, #232526 0%, #414345 100%);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 0 0 0 0;
+  box-shadow: 2px 0 16px #000a;
+  z-index: 10;
+  border-right: 2px solid #333;
+  height: 100vh;
+  position: relative;
+}
+#sidebar .hud-section {
+  margin: 32px 18px 18px 18px;
+  padding: 18px 12px;
+  background: #292b2f;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px #0004;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+#sidebar .hud-title {
+  font-size: 1.3em;
+  font-weight: bold;
+  margin-bottom: 10px;
+  letter-spacing: 1px;
+  color: #4fc3f7;
+  text-shadow: 0 2px 8px #000a;
+}
+#sidebar .hud-info {
+  font-size: 1.1em;
+  margin: 6px 0;
+  color: #ffe082;
+}
+#sidebar .hud-btn {
+  background: linear-gradient(90deg,#4fc3f7 0%,#1976d2 100%);
+  color: #fff;
+  font-size: 1.1em;
+  font-family: 'Trebuchet MS', Impact, sans-serif;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 24px;
+  margin: 10px 0;
+  box-shadow: 0 2px 8px #0006;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+  outline: none;
+  letter-spacing: 1px;
+}
+#sidebar .hud-btn:hover, #sidebar .hud-btn:focus {
+  background: linear-gradient(90deg,#1976d2 0%,#4fc3f7 100%);
+  color: #fff;
+  transform: translateY(-2px) scale(1.04);
+  box-shadow: 0 6px 24px #1976d2cc;
 }
 #game-canvas {
   background: #111;
   display: block;
-  margin: 20px auto;
+  margin: 0 auto;
   border: 2px solid #444;
+  flex: 1 1 auto;
+  width: 100vw;
+  height: 100vh;
+  max-width: calc(100vw - 220px);
+  max-height: 100vh;
+  box-sizing: border-box;
 }
 #ui-container {
-  margin: 10px auto;
-  width: 800px;
-  text-align: left;
-  background: #333;
-  padding: 10px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px #0008;
+  display: none;
+}
+#modal-overlay {
+  /* unchanged */
 } 

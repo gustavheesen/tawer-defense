@@ -160,16 +160,91 @@ function hideModal() {
   modal.innerHTML = '';
 }
 
+// Utility to resize canvas to match its displayed size (CSS pixels)
+function resizeCanvasToDisplaySize(canvas) {
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  const width = Math.round(rect.width * dpr);
+  const height = Math.round(rect.height * dpr);
+  if (canvas.width !== width || canvas.height !== height) {
+    canvas.width = width;
+    canvas.height = height;
+    return true;
+  }
+  return false;
+}
+
 function startGameWithPath(mode, width, height, pathOverride) {
   let path = pathOverride;
   if (mode === 'random' && !path) {
     path = generateRandomPath(width, height, 'horizontal');
   }
+  // Ensure canvas matches display size before starting game
+  resizeCanvasToDisplaySize(canvas);
   // TODO: For 'draw', implement custom path drawing UI
   const config = { ...Game.defaultConfig, map: { width, height } };
   const game = new Game(canvas, ctx, config, path);
   setupUI(game);
+  setupSidebar(game);
   game.start();
+  window.currentGame = game;
 }
+
+function setupSidebar(game) {
+  const sidebar = document.getElementById('sidebar');
+  sidebar.innerHTML = `
+    <div class="hud-section">
+      <div class="hud-title">Game Info</div>
+      <div class="hud-info">Score: <span id="hud-score">0</span></div>
+      <div class="hud-info">Lives: <span id="hud-lives">${game.lives}</span></div>
+      <div class="hud-info">Wave: <span id="hud-wave">1</span></div>
+    </div>
+    <div class="hud-section">
+      <div class="hud-title">Towers</div>
+      <button class="hud-btn" id="hud-tower-cannon">Cannon</button>
+      <button class="hud-btn" id="hud-tower-laser">Laser</button>
+      <button class="hud-btn" id="hud-tower-slow">Slow</button>
+      <button class="hud-btn" id="hud-start-wave">Start Wave</button>
+    </div>
+  `;
+  document.getElementById('hud-tower-cannon').onclick = () => {
+    game.selectedTowerType = 'cannon';
+    updateTowerSelection();
+  };
+  document.getElementById('hud-tower-laser').onclick = () => {
+    game.selectedTowerType = 'laser';
+    updateTowerSelection();
+  };
+  document.getElementById('hud-tower-slow').onclick = () => {
+    game.selectedTowerType = 'slow';
+    updateTowerSelection();
+  };
+  document.getElementById('hud-start-wave').onclick = () => {
+    game.startWave();
+  };
+  function updateTowerSelection() {
+    ['cannon','laser','slow'].forEach(type => {
+      document.getElementById('hud-tower-' + type).classList.remove('selected');
+    });
+    document.getElementById('hud-tower-' + game.selectedTowerType).classList.add('selected');
+  }
+  updateTowerSelection();
+}
+
+function updateSidebarHUD(game, score, lives, wave) {
+  const s = document.getElementById('hud-score');
+  const l = document.getElementById('hud-lives');
+  const w = document.getElementById('hud-wave');
+  if (s) s.textContent = score;
+  if (l) l.textContent = lives;
+  if (w) w.textContent = wave;
+}
+
+window.updateSidebarHUD = updateSidebarHUD;
+
+// Also update canvas size on window resize
+window.addEventListener('resize', () => {
+  resizeCanvasToDisplaySize(canvas);
+});
 
 showIntroMenu(); 
