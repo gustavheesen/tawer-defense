@@ -184,9 +184,9 @@ function startGameWithPath(mode, width, height, pathOverride) {
   // TODO: For 'draw', implement custom path drawing UI
   const config = { ...Game.defaultConfig, map: { width, height } };
   const game = new Game(canvas, ctx, config, path);
-  setupUI(game);
+setupUI(game);
   setupSidebar(game);
-  game.start();
+game.start(); 
   window.currentGame = game;
 }
 
