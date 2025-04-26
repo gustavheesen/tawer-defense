@@ -39,11 +39,12 @@ const TOWER_CLASSES = {
 };
 
 export class Game {
-  constructor(canvas, ctx) {
+  constructor(canvas, ctx, config = null, path = null) {
     this.canvas = canvas;
     this.ctx = ctx;
-    this.config = loadConfig();
-    this.map = new Map(this.config.map, enemyPath);
+    this.config = config ? config : loadConfig();
+    this.path = path || enemyPath;
+    this.map = new Map(this.config.map, this.path);
     this.enemies = [];
     this.towers = [];
     this.projectiles = [];
@@ -51,7 +52,7 @@ export class Game {
     this.lives = this.config.lives;
     this.running = false;
     this.lastTimestamp = 0;
-    this.pathTiles = getPathTiles(enemyPath);
+    this.pathTiles = getPathTiles(this.path);
     this.selectedTowerType = 'cannon';
     // Add event listener for placing towers
     this.canvas.addEventListener('click', this.handleCanvasClick.bind(this));
@@ -82,17 +83,17 @@ export class Game {
     // Spawn a mix of tanks, infantry, and fast enemies
     for (let i = 0; i < 3; i++) {
       setTimeout(() => {
-        this.enemies.push(new TankEnemy(enemyPath, this.config.map, this.canvas));
+        this.enemies.push(new TankEnemy(this.path, this.config.map, this.canvas));
       }, i * 1200);
     }
     for (let i = 0; i < 5; i++) {
       setTimeout(() => {
-        this.enemies.push(new InfantryEnemy(enemyPath, this.config.map, this.canvas));
+        this.enemies.push(new InfantryEnemy(this.path, this.config.map, this.canvas));
       }, i * 700 + 600);
     }
     for (let i = 0; i < 4; i++) {
       setTimeout(() => {
-        this.enemies.push(new SpiderEnemy(enemyPath, this.config.map, this.canvas));
+        this.enemies.push(new SpiderEnemy(this.path, this.config.map, this.canvas));
       }, i * 500 + 300);
     }
   }

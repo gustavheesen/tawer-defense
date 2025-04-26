@@ -1,11 +1,25 @@
 import { Game } from './game.js';
 import { setupUI } from './ui.js';
+import { generateRandomPath } from './maps/randomPath.js';
 
 const canvas = document.getElementById('game-canvas');
 const ctx = canvas.getContext('2d');
 const modal = document.getElementById('modal-overlay');
 
+let lastGridWidth = 16;
+let lastGridHeight = 12;
+let previewPath = null;
+let previewWidth = 16;
+let previewHeight = 12;
+
 function showIntroMenu() {
+  previewWidth = lastGridWidth;
+  previewHeight = lastGridHeight;
+  previewPath = generateRandomPath(previewWidth, previewHeight, 'horizontal');
+  renderMenu();
+}
+
+function renderMenu() {
   modal.style.display = 'flex';
   modal.innerHTML = `
     <div id="intro-menu" style="background:linear-gradient(135deg,#232526 0%,#414345 100%); color:#fff; padding: 40px 56px; border-radius: 22px; box-shadow: 0 8px 48px #000b; text-align: center; min-width: 340px; border: 3px solid #4fc3f7; position:relative;">
@@ -15,13 +29,18 @@ function showIntroMenu() {
         </span>
         <div style="font-size:1.1em; color:#b3e5fc; margin-top: 6px; letter-spacing:1px;">Build. Defend. Survive.</div>
       </div>
-      <button class="menu-btn" id="random-path-btn">Random Path</button>
-      <button class="menu-btn" id="draw-path-btn">Draw Your Own Path</button>
-      <div id="grid-size-select" style="margin-top: 28px; display: none;">
+      <div id="preview-area" style="margin: 0 auto 18px auto; display: flex; flex-direction: column; align-items: center;">
+        <canvas id="map-preview" width="320" height="240" style="background:#222; border-radius:12px; box-shadow:0 2px 12px #0006; margin-bottom: 10px;"></canvas>
+        <div>
+          <button class="menu-btn" id="randomize-btn">Randomize</button>
+          <button class="menu-btn" id="start-game-btn">Start Game</button>
+        </div>
+      </div>
+      <div id="grid-size-select" style="margin-top: 28px;">
         <label style="font-size:1.1em; color:#b3e5fc;">Grid Size: </label>
-        <input id="grid-width" type="number" min="6" max="32" value="16" style="width: 60px; font-size:1.1em; border-radius:6px; border:1px solid #4fc3f7; padding:2px 6px;"> x
-        <input id="grid-height" type="number" min="6" max="32" value="12" style="width: 60px; font-size:1.1em; border-radius:6px; border:1px solid #4fc3f7; padding:2px 6px;">
-        <button class="menu-btn" id="start-draw-btn" style="margin-left: 16px;">Start Drawing</button>
+        <input id="grid-width" type="number" min="6" max="32" value="${previewWidth}" style="width: 60px; font-size:1.1em; border-radius:6px; border:1px solid #4fc3f7; padding:2px 6px;"> x
+        <input id="grid-height" type="number" min="6" max="32" value="${previewHeight}" style="width: 60px; font-size:1.1em; border-radius:6px; border:1px solid #4fc3f7; padding:2px 6px;">
+        <button class="menu-btn" id="resize-btn" style="margin-left: 16px;">Resize</button>
       </div>
     </div>
     <style>
@@ -53,19 +72,87 @@ function showIntroMenu() {
       }
     </style>
   `;
-  document.getElementById('random-path-btn').onclick = () => {
+  drawMapPreview();
+  document.getElementById('randomize-btn').onclick = () => {
+    previewPath = generateRandomPath(previewWidth, previewHeight, 'horizontal');
+    drawMapPreview();
+  };
+  document.getElementById('start-game-btn').onclick = () => {
+    lastGridWidth = previewWidth;
+    lastGridHeight = previewHeight;
     hideModal();
-    startGameWithPath('random');
+    startGameWithPath('random', previewWidth, previewHeight, previewPath);
   };
-  document.getElementById('draw-path-btn').onclick = () => {
-    document.getElementById('grid-size-select').style.display = 'block';
+  document.getElementById('resize-btn').onclick = () => {
+    previewWidth = parseInt(document.getElementById('grid-width').value, 10);
+    previewHeight = parseInt(document.getElementById('grid-height').value, 10);
+    previewPath = generateRandomPath(previewWidth, previewHeight, 'horizontal');
+    renderMenu();
   };
-  document.getElementById('start-draw-btn').onclick = () => {
-    const width = parseInt(document.getElementById('grid-width').value, 10);
-    const height = parseInt(document.getElementById('grid-height').value, 10);
-    hideModal();
-    startGameWithPath('draw', width, height);
-  };
+}
+
+function drawMapPreview() {
+  const canvas = document.getElementById('map-preview');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const w = previewWidth;
+  const h = previewHeight;
+  const tileW = canvas.width / w;
+  const tileH = canvas.height / h;
+  // Draw grid
+  ctx.strokeStyle = '#444';
+  ctx.lineWidth = 1;
+  for (let x = 0; x <= w; x++) {
+    ctx.beginPath();
+    ctx.moveTo(x * tileW, 0);
+    ctx.lineTo(x * tileW, canvas.height);
+    ctx.stroke();
+  }
+  for (let y = 0; y <= h; y++) {
+    ctx.beginPath();
+    ctx.moveTo(0, y * tileH);
+    ctx.lineTo(canvas.width, y * tileH);
+    ctx.stroke();
+  }
+  // Draw path
+  if (previewPath && previewPath.length > 1) {
+    ctx.strokeStyle = '#ffe082';
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.moveTo(
+      previewPath[0].x * tileW + tileW / 2,
+      previewPath[0].y * tileH + tileH / 2
+    );
+    for (let i = 1; i < previewPath.length; i++) {
+      ctx.lineTo(
+        previewPath[i].x * tileW + tileW / 2,
+        previewPath[i].y * tileH + tileH / 2
+      );
+    }
+    ctx.stroke();
+    // Draw start/end
+    ctx.fillStyle = '#4fc3f7';
+    ctx.beginPath();
+    ctx.arc(
+      previewPath[0].x * tileW + tileW / 2,
+      previewPath[0].y * tileH + tileH / 2,
+      Math.min(tileW, tileH) * 0.3,
+      0,
+      2 * Math.PI
+    );
+    ctx.fill();
+    ctx.fillStyle = '#ff8f00';
+    ctx.beginPath();
+    ctx.arc(
+      previewPath[previewPath.length - 1].x * tileW + tileW / 2,
+      previewPath[previewPath.length - 1].y * tileH + tileH / 2,
+      Math.min(tileW, tileH) * 0.3,
+      0,
+      2 * Math.PI
+    );
+    ctx.fill();
+  }
 }
 
 function hideModal() {
@@ -73,12 +160,14 @@ function hideModal() {
   modal.innerHTML = '';
 }
 
-function startGameWithPath(mode, width, height) {
-  // TODO: Implement random path or draw path logic
-  // For now, just use default config and path
-  const config = { width: width || 16, height: height || 12 };
-  // You would generate or let the user draw a path here
-  const game = new Game(canvas, ctx); // Pass config/path as needed
+function startGameWithPath(mode, width, height, pathOverride) {
+  let path = pathOverride;
+  if (mode === 'random' && !path) {
+    path = generateRandomPath(width, height, 'horizontal');
+  }
+  // TODO: For 'draw', implement custom path drawing UI
+  const config = { ...Game.defaultConfig, map: { width, height } };
+  const game = new Game(canvas, ctx, config, path);
   setupUI(game);
   game.start();
 }
