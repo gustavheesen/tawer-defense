@@ -1,3 +1,5 @@
+import { drawTile } from '../tiles/tileRenderer.js';
+
 export class Map {
   constructor(config, path = []) {
     this.width = config.width;
@@ -12,10 +14,9 @@ export class Map {
     const tileSizeY = canvasHeight / this.height;
     const tileSize = Math.min(tileSizeX, tileSizeY);
     ctx.save();
-    ctx.strokeStyle = '#444';
     for (let x = 0; x < this.width; x++) {
       for (let y = 0; y < this.height; y++) {
-        ctx.strokeRect(x * tileSize, y * tileSize, tileSize, tileSize);
+        drawTile(ctx, x * tileSize, y * tileSize, tileSize);
       }
     }
     if (this.path && this.path.length > 1) {
