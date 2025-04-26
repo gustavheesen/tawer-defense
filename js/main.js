@@ -198,6 +198,7 @@ function setupSidebar(game) {
       <div class="hud-info">Score: <span id="hud-score">0</span></div>
       <div class="hud-info">Lives: <span id="hud-lives">${game.lives}</span></div>
       <div class="hud-info">Wave: <span id="hud-wave">1</span></div>
+      <div class="hud-info">Money: <span id="hud-money">${game.money}</span></div>
     </div>
     <div class="hud-section">
       <div class="hud-title">Towers</div>
@@ -231,13 +232,15 @@ function setupSidebar(game) {
   updateTowerSelection();
 }
 
-function updateSidebarHUD(game, score, lives, wave) {
+function updateSidebarHUD(game, score, lives, wave, money) {
   const s = document.getElementById('hud-score');
   const l = document.getElementById('hud-lives');
   const w = document.getElementById('hud-wave');
+  const m = document.getElementById('hud-money');
   if (s) s.textContent = score;
   if (l) l.textContent = lives;
   if (w) w.textContent = wave;
+  if (m) m.textContent = money;
 }
 
 window.updateSidebarHUD = updateSidebarHUD;

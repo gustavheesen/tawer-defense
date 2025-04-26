@@ -62,12 +62,22 @@ export class Game {
     this.projectiles = [];
     this.score = 0;
     this.lives = this.config.lives;
+    this.money = 100; // Start money
     this.running = false;
     this.lastTimestamp = 0;
     this.pathTiles = getPathTiles(this.path);
     this.selectedTowerType = 'cannon';
     // Add event listener for placing towers
     this.canvas.addEventListener('click', this.handleCanvasClick.bind(this));
+  }
+
+  getTowerCost(type) {
+    switch(type) {
+      case 'cannon': return 50;
+      case 'laser': return 80;
+      case 'slow': return 60;
+      default: return 50;
+    }
   }
 
   handleCanvasClick(event) {
@@ -85,7 +95,11 @@ export class Game {
     
     // Place tower with type
     const TowerClass = TOWER_CLASSES[this.selectedTowerType] || CannonTower;
+    const cost = this.getTowerCost(this.selectedTowerType);
+    if (this.money < cost) return; // Not enough money
+    this.money -= cost;
     this.towers.push(new TowerClass(tileX, tileY, this.config.map, this.canvas, this.path));
+    if (typeof window.updateSidebarHUD === 'function') window.updateSidebarHUD(this, this.score, this.lives, this.currentWave, this.money);
   }
 
   start() {
@@ -227,7 +241,13 @@ export class Game {
       }
     }
     // Remove dead enemies
+    const before = this.enemies.length;
     this.enemies = this.enemies.filter(e => e.alive);
+    const killed = before - this.enemies.length;
+    if (killed > 0) {
+      this.money += killed * 10; // +10 per kill
+      if (typeof window.updateSidebarHUD === 'function') window.updateSidebarHUD(this, this.score, this.lives, this.currentWave, this.money);
+    }
     // Add new enemies (from splitting)
     this.enemies.push(...newEnemies);
     // Update projectiles
