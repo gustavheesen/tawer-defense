@@ -119,32 +119,7 @@ export class Game {
     this.enemies = this.enemies.filter(e => e.alive);
     // Update projectiles
     for (const proj of this.projectiles) {
-      proj.update(delta);
-    }
-    // Collision detection: projectiles hit enemies
-    for (const proj of this.projectiles) {
-      for (const enemy of this.enemies) {
-        const dx = enemy.x - proj.x;
-        const dy = enemy.y - proj.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        const hitRadius = proj instanceof LaserProjectile ? 12 : 16;
-        if (dist < hitRadius) {
-          // Apply damage/effect
-          if (proj instanceof CannonProjectile) {
-            enemy.health -= 12;
-          } else if (proj instanceof LaserProjectile) {
-            enemy.health -= 7;
-          } else if (proj instanceof SlowProjectile) {
-            enemy.health -= 4;
-            enemy.speed *= 0.7; // slow effect
-          }
-          proj.alive = false;
-          if (enemy.health <= 0) {
-            enemy.alive = false;
-          }
-          break;
-        }
-      }
+      proj.update(delta, this.enemies);
     }
     // Remove dead projectiles
     this.projectiles = this.projectiles.filter(p => p.alive);

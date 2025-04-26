@@ -21,4 +21,13 @@ export class SlowProjectile extends Projectile {
     ctx.fill();
     ctx.restore();
   }
+
+  getHitRadius() {
+    return 16;
+  }
+
+  applyEffect(enemy) {
+    enemy.health -= 4;
+    enemy.speed *= 0.7;
+  }
 } 

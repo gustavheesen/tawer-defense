@@ -20,4 +20,12 @@ export class LaserProjectile extends Projectile {
     ctx.stroke();
     ctx.restore();
   }
+
+  getHitRadius() {
+    return 12;
+  }
+
+  applyEffect(enemy) {
+    enemy.health -= 7;
+  }
 } 
