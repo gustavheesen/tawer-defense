@@ -1,4 +1,5 @@
 import { loadConfig } from '../config.js';
+import { getTileSize } from '../utils.js';
 
 export class Tower {
   constructor(tileX, tileY, mapConfig, canvas) {
@@ -8,7 +9,7 @@ export class Tower {
     this.mapConfig = mapConfig;
     this.canvas = canvas;
     this.fireRate = config.towerFireRate;
-    this.range = 80;
+    this.rangeTiles = config.baseTowerRange; // Range in tiles
     this.cooldown = 0;
     this.turretAngle = 0; // radians
     this.turretTurnSpeed = Math.PI; // radians per second (180 deg/sec)
@@ -16,9 +17,10 @@ export class Tower {
 
   update(delta, enemies, projectiles) {
     this.cooldown -= delta;
-    const tileSize = Math.min(this.canvas.width / this.mapConfig.width, this.canvas.height / this.mapConfig.height);
+    const tileSize = getTileSize(this.canvas, this.mapConfig);
     const cx = this.tileX * tileSize + tileSize / 2;
     const cy = this.tileY * tileSize + tileSize / 2;
+    const rangePixels = this.rangeTiles * tileSize;
     let nearest = null;
     let nearestDist = Infinity;
     let targetAngle = this.turretAngle;
@@ -26,7 +28,7 @@ export class Tower {
       const dx = enemy.x - cx;
       const dy = enemy.y - cy;
       const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < this.range && dist < nearestDist) {
+      if (dist < rangePixels && dist < nearestDist) {
         nearest = enemy;
         nearestDist = dist;
         targetAngle = Math.atan2(dy, dx);
@@ -48,13 +50,14 @@ export class Tower {
     }
     // Only fire if aimed within 5 degrees
     if (nearest && this.cooldown <= 0 && Math.abs(angleDiff(targetAngle, this.turretAngle)) < 0.087) {
-      this.fireProjectile(cx, cy, projectiles);
+      this.fireProjectile(cx, cy, projectiles, tileSize);
       this.cooldown = 1 / this.fireRate;
     }
   }
 
-  fireProjectile(cx, cy, projectiles) {
+  fireProjectile(cx, cy, projectiles, tileSize) {
     // To be implemented by subclasses
+    // Should use tileSize to scale speed
   }
 
   // No render here; subclasses must implement their own render method

@@ -39,11 +39,11 @@ export class Projectile {
     // Default: do nothing, subclasses override
   }
 
-  render(ctx) {
+  render(ctx, tileSize) {
     ctx.save();
     ctx.fillStyle = 'yellow';
     ctx.beginPath();
-    ctx.arc(this.x, this.y, this.radius, 0, 2 * Math.PI);
+    ctx.arc(this.x, this.y, tileSize * 0.15, 0, 2 * Math.PI);
     ctx.fill();
     ctx.restore();
   }

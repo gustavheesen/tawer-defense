@@ -13,6 +13,7 @@ import { LaserProjectile } from './projectiles/laserProjectile.js';
 import { SlowProjectile } from './projectiles/slowProjectile.js';
 import { path as enemyPath } from './maps/map1.js';
 import { SpiderEnemy } from './enemies/spiderEnemy.js';
+import { getTileSize } from './utils.js';
 
 function getPathTiles(path) {
   const tiles = new Set();
@@ -129,6 +130,7 @@ export class Game {
   render() {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.map.render(this.ctx);
+    const tileSize = getTileSize(this.canvas, this.config.map);
     // Render towers using their own render method
     for (const tower of this.towers) {
       tower.render(this.ctx);
@@ -139,7 +141,7 @@ export class Game {
     }
     // Render projectiles
     for (const proj of this.projectiles) {
-      proj.render(this.ctx);
+      proj.render(this.ctx, tileSize);
     }
     // TODO: Render UI overlays, etc.
   }

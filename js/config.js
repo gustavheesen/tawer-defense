@@ -3,8 +3,8 @@
 
 export function loadConfig() {
   return {
-    // Base speed for all enemies (pixels per second)
-    enemySpeed: 60,
+    // Base speed for all enemies (tiles per second)
+    enemySpeed: 1.5,
     // Base fire rate for all towers (shots per second)
     towerFireRate: 1,
     // Difficulty multiplier (affects enemy health, spawn rate, etc.)
@@ -13,11 +13,14 @@ export function loadConfig() {
     startingMoney: 100,
     // Number of lives at the start
     lives: 20,
-    // Map config (can be expanded)
+    // Default map config (can be overridden by menu)
     map: {
       width: 16,
       height: 12,
-      tileSize: 40
-    }
+    },
+    // Default tower range in tiles
+    baseTowerRange: 3,
+    // Default projectile speed in tiles per second
+    baseProjectileSpeed: 5,
   };
 } 

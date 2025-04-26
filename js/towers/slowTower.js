@@ -1,5 +1,6 @@
 import { Tower } from './tower.js';
 import { SlowProjectile } from '../projectiles/slowProjectile.js';
+import { loadConfig } from '../config.js';
 
 function angleDiff(a, b) {
   let d = a - b;
@@ -11,7 +12,9 @@ function angleDiff(a, b) {
 export class SlowTower extends Tower {
   constructor(tileX, tileY, mapConfig, canvas) {
     super(tileX, tileY, mapConfig, canvas);
-    this.range = 90;
+    const config = loadConfig();
+    this.rangeTiles = 2.5; // Tiles
+    this.projectileSpeedTiles = config.baseProjectileSpeed * 0.6; // Tiles per second
     this.fireRate = 1.2;
     this.cooldown = 0;
     this.turretTurnSpeed = Math.PI / 1.5; // 120 deg/sec
@@ -21,10 +24,10 @@ export class SlowTower extends Tower {
     super.update(delta, enemies, projectiles);
   }
 
-  fireProjectile(cx, cy, projectiles) {
-    const speed = 180;
-    const vx = Math.cos(this.turretAngle) * speed;
-    const vy = Math.sin(this.turretAngle) * speed;
+  fireProjectile(cx, cy, projectiles, tileSize) {
+    const speedPixels = this.projectileSpeedTiles * tileSize;
+    const vx = Math.cos(this.turretAngle) * speedPixels;
+    const vy = Math.sin(this.turretAngle) * speedPixels;
     projectiles.push(new SlowProjectile(cx, cy, vx, vy));
   }
 

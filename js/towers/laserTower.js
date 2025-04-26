@@ -1,5 +1,6 @@
 import { Tower } from './tower.js';
 import { LaserProjectile } from '../projectiles/laserProjectile.js';
+import { loadConfig } from '../config.js';
 
 function angleDiff(a, b) {
   let d = a - b;
@@ -11,7 +12,9 @@ function angleDiff(a, b) {
 export class LaserTower extends Tower {
   constructor(tileX, tileY, mapConfig, canvas) {
     super(tileX, tileY, mapConfig, canvas);
-    this.range = 320;
+    const config = loadConfig();
+    this.rangeTiles = 8; // Tiles
+    this.projectileSpeedTiles = config.baseProjectileSpeed * 1.2; // Tiles per second
     this.fireRate = 2.5;
     this.cooldown = 0;
     this.turretTurnSpeed = Math.PI; // 180 deg/sec
@@ -21,10 +24,10 @@ export class LaserTower extends Tower {
     super.update(delta, enemies, projectiles);
   }
 
-  fireProjectile(cx, cy, projectiles) {
-    const speed = 400;
-    const vx = Math.cos(this.turretAngle) * speed;
-    const vy = Math.sin(this.turretAngle) * speed;
+  fireProjectile(cx, cy, projectiles, tileSize) {
+    const speedPixels = this.projectileSpeedTiles * tileSize;
+    const vx = Math.cos(this.turretAngle) * speedPixels;
+    const vy = Math.sin(this.turretAngle) * speedPixels;
     projectiles.push(new LaserProjectile(cx, cy, vx, vy));
   }
 
