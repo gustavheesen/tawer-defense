@@ -5,6 +5,10 @@ This file lists extra ideas, enhancements, and remaining tasks for the Tower Def
 ## High Priority
 
 - Add UI overlays (game over screen, pause menu, etc.)
+- Implement a game intro menu:
+  - Allow player to select 'random path' or 'draw own path' for enemy movement
+  - If drawing manually, require player to select the number of tiles for the grid before drawing
+  - Ensure all tower/enemy ranges are based on tile distance (not pixels), to support variable grid sizes
 
 ## Extra Ideas & Feature Backlog
 - Add more enemy types (e.g., flying enemies, boss enemies, regenerating enemies)
