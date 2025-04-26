@@ -15,7 +15,8 @@ This file lists all features that have already been implemented in the Tower Def
 - Example map layout (`js/maps/map1.js`)
 
 ## Towers
-- Base Tower class (`js/towers/tower.js`)
+- Base Tower class (`js/towers/tower.js`) now implements generic targeting and shooting logic (finds nearest enemy, rotates, fires if aimed and ready)
+- Subclasses only override `fireProjectile` to specify projectile type and speed
 - Cannon Tower (`js/towers/cannonTower.js`)
 - Laser Tower (`js/towers/laserTower.js`)
 - Slow Tower (`js/towers/slowTower.js`)
@@ -27,7 +28,7 @@ This file lists all features that have already been implemented in the Tower Def
 - Spider Enemy (`js/enemies/spiderEnemy.js`)
 
 ## Projectiles
-- Base Projectile class (`js/projectiles/projectile.js`)
+- Base Projectile class (`js/projectiles/projectile.js`) now handles collision detection and effect application
 - Bullet (`js/projectiles/bullet.js`)
 - Laser Projectile (`js/projectiles/laserProjectile.js`)
 - Slow Projectile (`js/projectiles/slowProjectile.js`)
