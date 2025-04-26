@@ -1,5 +1,11 @@
 # Tower Defense Game: Enhanced Modular File Plan
 
+## Project Structure
+
+This file describes the intended modular structure and organization of the Tower Defense Game project. For a list of implemented features and the current development backlog, see:
+- `implemented_features.md` (what's done)
+- `dev_backlog.md` (what's next/ideas)
+
 ## 1. **index.html**
 - Main HTML file.
 - Loads the canvas, UI, and all JS modules.
@@ -106,22 +112,14 @@
 
 ---
 
-# **Development Steps (Updated)**
-1. **Set up index.html** with canvas and script imports.
-2. **Implement config.js** for easy tweaking of game parameters (such as speed, difficulty, etc.).
-3. **Build base classes**: map.js, tower.js, enemy.js, projectile.js.
-4. **Create specific types**: (e.g., cannonTower.js, fastEnemy.js, bullet.js, map1.js).
-5. **Build game.js** to manage waves, score, and game state.
-6. **Add ui.js** for controls and feedback.
-7. **Tie everything together in main.js** with the game loop.
-8. **Style with styles.css**.
-
----
-
 # **Notes**
 - Each type (tower, enemy, projectile, map) gets its own file for easy customization and extension.
 - Use ES6 modules for imports/exports.
 - Keep each file focused on a single responsibility.
 - Use clear, consistent naming conventions.
 - You can add textures, properties, and behaviors per type by editing their respective files.
-- **The config.js file is the main place to tweak gameplay balance and difficulty.** 
+- **The config.js file is the main place to tweak gameplay balance and difficulty.**
+
+---
+
+**For progress tracking and backlog, see `implemented_features.md` and `dev_backlog.md`.** 
