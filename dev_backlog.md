@@ -3,8 +3,8 @@
 This file lists extra ideas, enhancements, and remaining tasks for the Tower Defense Game project.
 
 ## High Priority
-- Implement tower targeting and shooting logic in the base Tower class
-- Implement collision detection in the base Projectile class (move logic from game.js for modularity)
+- DONE Implement tower targeting and shooting logic in the base Tower class
+- DONE - Implement collision detection in the base Projectile class (move logic from game.js for modularity)
 - Add UI overlays (game over screen, pause menu, etc.)
 
 ## Extra Ideas & Feature Backlog

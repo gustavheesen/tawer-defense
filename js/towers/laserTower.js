@@ -18,39 +18,14 @@ export class LaserTower extends Tower {
   }
 
   update(delta, enemies, projectiles) {
-    this.cooldown -= delta;
-    const tileSize = Math.min(this.canvas.width / this.mapConfig.width, this.canvas.height / this.mapConfig.height);
-    const cx = this.tileX * tileSize + tileSize / 2;
-    const cy = this.tileY * tileSize + tileSize / 2;
-    let nearest = null;
-    let nearestDist = Infinity;
-    let targetAngle = this.turretAngle;
-    for (const enemy of enemies) {
-      const dx = enemy.x - cx;
-      const dy = enemy.y - cy;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < this.range && dist < nearestDist) {
-        nearest = enemy;
-        nearestDist = dist;
-        targetAngle = Math.atan2(dy, dx);
-      }
-    }
-    // Rotate turret toward target
-    let diff = angleDiff(targetAngle, this.turretAngle);
-    const maxTurn = this.turretTurnSpeed * delta;
-    if (Math.abs(diff) < maxTurn) {
-      this.turretAngle = targetAngle;
-    } else {
-      this.turretAngle += Math.sign(diff) * maxTurn;
-    }
-    // Only fire if aimed within 5 degrees
-    if (nearest && this.cooldown <= 0 && Math.abs(angleDiff(targetAngle, this.turretAngle)) < 0.087) {
-      const speed = 400;
-      const vx = Math.cos(this.turretAngle) * speed;
-      const vy = Math.sin(this.turretAngle) * speed;
-      projectiles.push(new LaserProjectile(cx, cy, vx, vy));
-      this.cooldown = 1 / this.fireRate;
-    }
+    super.update(delta, enemies, projectiles);
+  }
+
+  fireProjectile(cx, cy, projectiles) {
+    const speed = 400;
+    const vx = Math.cos(this.turretAngle) * speed;
+    const vy = Math.sin(this.turretAngle) * speed;
+    projectiles.push(new LaserProjectile(cx, cy, vx, vy));
   }
 
   drawBase(ctx, cx, cy, tileSize) {
