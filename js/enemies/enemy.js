@@ -22,6 +22,13 @@ export class Enemy {
     this.y = path[0].y * tileSize + tileSize / 2;
   }
 
+  takeDamage(amount, type = 'projectile') {
+    this.health -= amount;
+    if (this.health <= 0) {
+      this.alive = false;
+    }
+  }
+
   update(delta) {
     // Move along path
     if (this.pathIndex < this.path.length - 1) {

@@ -24,10 +24,10 @@ export class LaserProjectile extends Projectile {
   }
 
   getHitRadius() {
-    return 12;
+    return 5;
   }
 
   applyEffect(enemy) {
-    enemy.health -= 7;
+    enemy.health -= 1;
   }
 } 

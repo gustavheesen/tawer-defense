@@ -16,12 +16,38 @@ export class LaserTower extends Tower {
     this.rangeTiles = 8; // Tiles
     this.projectileSpeedTiles = config.baseProjectileSpeed * 1.2; // Tiles per second
     this.fireRate = 2.5;
-    this.cooldown = 0;
+    this.cooldown = 1.7;
     this.turretTurnSpeed = Math.PI; // 180 deg/sec
+    this.range = 1.7;
+    this.damage = 1;
+    this.lastShot = 0;
+  }
+
+  findTarget(enemies) {
+    // Return the first enemy in range
+    const tileSize = Math.min(this.canvas.width / this.mapConfig.width, this.canvas.height / this.mapConfig.height);
+    const cx = this.tileX * tileSize + tileSize / 2;
+    const cy = this.tileY * tileSize + tileSize / 2;
+    for (const enemy of enemies) {
+      const dist = Math.sqrt((enemy.x - cx) ** 2 + (enemy.y - cy) ** 2);
+      if (dist <= this.range * tileSize) {
+        return enemy;
+      }
+    }
+    return null;
   }
 
   update(delta, enemies, projectiles) {
     super.update(delta, enemies, projectiles);
+    this.lastShot -= delta;
+    if (this.lastShot <= 0) {
+      const target = this.findTarget(enemies);
+      if (target) {
+        target.takeDamage(this.damage, 'laser');
+        this.lastShot = this.cooldown;
+        projectiles.push(new LaserProjectile(this.x, this.y, target));
+      }
+    }
   }
 
   fireProjectile(cx, cy, projectiles, tileSize) {
