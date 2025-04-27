@@ -220,6 +220,12 @@ function setupSidebar(game) {
       <button class="hud-btn" id="hud-tower-missile">Missile Silo</button>
       <button class="hud-btn" id="hud-start-wave">Start Wave</button>
     </div>
+    <div class="hud-section" id="hud-upgrade-section" style="display:none;">
+      <div class="hud-title">Selected Tower</div>
+      <div class="hud-info">Level: <span id="hud-tower-level"></span></div>
+      <div class="hud-info">Upgrade Cost: <span id="hud-upgrade-cost"></span></div>
+      <button class="hud-btn" id="hud-upgrade-btn">Upgrade</button>
+    </div>
     <div class="hud-section">
       <div class="hud-title">Missile Silo</div>
       <div class="hud-info">Fires powerful homing missiles. Upgrades increase range, fire rate, and missile type.</div>
@@ -257,6 +263,34 @@ function setupSidebar(game) {
     document.getElementById('hud-tower-' + game.selectedTowerType).classList.add('selected');
   }
   updateTowerSelection();
+  // Add upgrade button logic
+  const upgradeSection = document.getElementById('hud-upgrade-section');
+  const upgradeBtn = document.getElementById('hud-upgrade-btn');
+  const towerLevelSpan = document.getElementById('hud-tower-level');
+  const upgradeCostSpan = document.getElementById('hud-upgrade-cost');
+  upgradeBtn.onclick = () => {
+    if (game.selectedTower && game.selectedTower.level < 5) {
+      const cost = game.getTowerCost(game.selectedTower.type || game.selectedTower.constructor.name.toLowerCase().replace('tower','')) * (game.selectedTower.level);
+      if (game.money >= cost) {
+        game.money -= cost;
+        game.selectedTower.upgrade();
+        updateUpgradeSection();
+        if (typeof window.updateSidebarHUD === 'function') window.updateSidebarHUD(game, game.score, game.lives, game.currentWave, game.money);
+      }
+    }
+  };
+  function updateUpgradeSection() {
+    if (game.selectedTower) {
+      upgradeSection.style.display = '';
+      towerLevelSpan.textContent = game.selectedTower.level;
+      const cost = game.getTowerCost(game.selectedTower.type || game.selectedTower.constructor.name.toLowerCase().replace('tower','')) * (game.selectedTower.level);
+      upgradeCostSpan.textContent = game.selectedTower.level < 5 ? cost : 'MAX';
+      upgradeBtn.disabled = game.selectedTower.level >= 5 || game.money < cost;
+    } else {
+      upgradeSection.style.display = 'none';
+    }
+  }
+  game.updateUpgradeSection = updateUpgradeSection;
 }
 
 function updateSidebarHUD(game, score, lives, wave, money) {
@@ -279,3 +313,44 @@ window.addEventListener('resize', () => {
 });
 
 showIntroMenu(); 
+
+// Add tower selection logic to canvas click
+const origHandleCanvasClick = Game.prototype.handleCanvasClick;
+Game.prototype.handleCanvasClick = function(event) {
+  const rect = this.canvas.getBoundingClientRect();
+  const x = event.clientX - rect.left;
+  const y = event.clientY - rect.top;
+  const tileSize = Math.min(this.canvas.width / this.config.map.width, this.canvas.height / this.config.map.height);
+  const tileX = Math.floor(x / tileSize);
+  const tileY = Math.floor(y / tileSize);
+  // Check if clicking on a tower
+  const clickedTower = this.towers.find(t => t.tileX === tileX && t.tileY === tileY);
+  if (clickedTower) {
+    this.selectedTower = clickedTower;
+    if (this.updateUpgradeSection) this.updateUpgradeSection();
+    return;
+  }
+  this.selectedTower = null;
+  if (this.updateUpgradeSection) this.updateUpgradeSection();
+  // Otherwise, place tower as normal
+  origHandleCanvasClick.call(this, event);
+};
+
+// Highlight selected tower in render
+const origRender = Game.prototype.render;
+Game.prototype.render = function() {
+  origRender.call(this);
+  if (this.selectedTower) {
+    const ctx = this.ctx;
+    const tileSize = Math.min(this.canvas.width / this.config.map.width, this.canvas.height / this.config.map.height);
+    const cx = this.selectedTower.tileX * tileSize + tileSize / 2;
+    const cy = this.selectedTower.tileY * tileSize + tileSize / 2;
+    ctx.save();
+    ctx.strokeStyle = '#ffe082';
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.arc(cx, cy, tileSize * 0.5, 0, 2 * Math.PI);
+    ctx.stroke();
+    ctx.restore();
+  }
+}; 
