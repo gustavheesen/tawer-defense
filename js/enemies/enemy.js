@@ -20,6 +20,7 @@ export class Enemy {
     const tileSize = getTileSize(canvas, mapConfig);
     this.x = path[0].x * tileSize + tileSize / 2;
     this.y = path[0].y * tileSize + tileSize / 2;
+    this.reachedEnd = false;
   }
 
   takeDamage(amount, type = 'projectile') {
@@ -60,6 +61,7 @@ export class Enemy {
     } else {
       // Reached end of path
       this.alive = false;
+      this.reachedEnd = true;
     }
   }
 

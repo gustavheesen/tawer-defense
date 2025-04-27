@@ -263,11 +263,23 @@ export class Game {
     }
     // Remove dead enemies
     const before = this.enemies.length;
+    // Only count as killed if NOT reachedEnd
+    const killedEnemies = this.enemies.filter(e => !e.alive && !e.reachedEnd);
+    const reachedEndEnemies = this.enemies.filter(e => !e.alive && e.reachedEnd);
     this.enemies = this.enemies.filter(e => e.alive);
-    const killed = before - this.enemies.length;
+    const killed = killedEnemies.length;
+    const reachedEnd = reachedEndEnemies.length;
     if (killed > 0) {
       this.money += killed * 10; // +10 per kill
       if (typeof window.updateSidebarHUD === 'function') window.updateSidebarHUD(this, this.score, this.lives, this.currentWave, this.money);
+    }
+    if (reachedEnd > 0) {
+      this.lives -= reachedEnd;
+      if (typeof window.updateSidebarHUD === 'function') window.updateSidebarHUD(this, this.score, this.lives, this.currentWave, this.money);
+      if (this.lives <= 0) {
+        this.running = false;
+        if (typeof window.showGameOverScreen === 'function') window.showGameOverScreen();
+      }
     }
     // If all enemies are gone and no more are spawning, start next wave
     if (this.enemies.length === 0 && this.running) {

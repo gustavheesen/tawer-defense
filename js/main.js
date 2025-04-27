@@ -3,8 +3,10 @@ import { LaserTower } from './towers/laserTower.js';
 import { SlowTower } from './towers/slowTower.js';
 import { CannonTower } from './towers/cannonTower.js';
 import { MissileSilo } from './towers/missileSilo.js';
-// import { setupUI } from './ui.js';
+import { setupUI } from './ui.js';
 import { generateRandomPath } from './maps/randomPath.js';
+import { loadConfig } from './config.js';
+// import { setupUI } from './ui.js';
 
 const canvas = document.getElementById('game-canvas');
 const ctx = canvas.getContext('2d');
@@ -191,11 +193,11 @@ function startGameWithPath(mode, width, height, pathOverride) {
   // Ensure canvas matches display size before starting game
   resizeCanvasToDisplaySize(canvas);
   // TODO: For 'draw', implement custom path drawing UI
-  const config = { ...Game.defaultConfig, map: { width, height } };
+  const config = { ...loadConfig(), map: { width, height } };
   const game = new Game(canvas, ctx, config, path);
-setupUI(game);
+  setupUI(game);
   setupSidebar(game);
-game.start(); 
+  game.start(); 
   window.currentGame = game;
 }
 
@@ -208,6 +210,7 @@ function setupSidebar(game) {
       <div class="hud-info">Lives: <span id="hud-lives">${game.lives}</span></div>
       <div class="hud-info">Wave: <span id="hud-wave">1</span></div>
       <div class="hud-info">Money: <span id="hud-money">${game.money}</span></div>
+      <button class="hud-btn" id="hud-buy-life">Buy Life ($1000)</button>
     </div>
     <div class="hud-section">
       <div class="hud-title">Towers</div>
@@ -240,6 +243,13 @@ function setupSidebar(game) {
   document.getElementById('hud-start-wave').onclick = () => {
     game.startWave();
   };
+  document.getElementById('hud-buy-life').onclick = () => {
+    if (game.money >= 1000 && game.lives < 10) {
+      game.money -= 1000;
+      game.lives += 1;
+      if (typeof window.updateSidebarHUD === 'function') window.updateSidebarHUD(game, game.score, game.lives, game.currentWave, game.money);
+    }
+  };
   function updateTowerSelection() {
     ['cannon','laser','slow'].forEach(type => {
       document.getElementById('hud-tower-' + type).classList.remove('selected');
@@ -255,9 +265,10 @@ function updateSidebarHUD(game, score, lives, wave, money) {
   const w = document.getElementById('hud-wave');
   const m = document.getElementById('hud-money');
   if (s) s.textContent = score;
-  if (l) l.textContent = lives;
+  if (l) l.textContent = `❤️ x${typeof lives === 'number' ? lives : 0}`;
   if (w) w.textContent = wave;
   if (m) m.textContent = money;
+  if (typeof window.updateLivesUI === 'function') window.updateLivesUI(lives);
 }
 
 window.updateSidebarHUD = updateSidebarHUD;
@@ -266,47 +277,5 @@ window.updateSidebarHUD = updateSidebarHUD;
 window.addEventListener('resize', () => {
   resizeCanvasToDisplaySize(canvas);
 });
-
-function setupUI(game) {
-  const canvas = document.getElementById('game-canvas');
-  canvas.addEventListener('click', (event) => {
-    const rect = canvas.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-    const tileSize = Math.min(canvas.width / game.config.map.width, canvas.height / game.config.map.height);
-    const tileX = Math.floor(x / tileSize);
-    const tileY = Math.floor(y / tileSize);
-    const tower = game.towers.find(t => t.tileX === tileX && t.tileY === tileY);
-    if (tower && tower instanceof window.LaserTower && tower.level < 5) {
-      const cost = game.getTowerCost('laser');
-      if (game.money >= cost) {
-        game.money -= cost;
-        tower.upgrade();
-        if (typeof window.updateSidebarHUD === 'function') window.updateSidebarHUD(game, game.score, game.lives, game.currentWave, game.money);
-      }
-    } else if (tower && tower instanceof window.SlowTower && tower.level < 5) {
-      const cost = game.getTowerCost('slow');
-      if (game.money >= cost) {
-        game.money -= cost;
-        tower.upgrade();
-        if (typeof window.updateSidebarHUD === 'function') window.updateSidebarHUD(game, game.score, game.lives, game.currentWave, game.money);
-      }
-    } else if (tower && tower instanceof window.CannonTower && tower.level < 5) {
-      const cost = game.getTowerCost('cannon');
-      if (game.money >= cost) {
-        game.money -= cost;
-        tower.upgrade();
-        if (typeof window.updateSidebarHUD === 'function') window.updateSidebarHUD(game, game.score, game.lives, game.currentWave, game.money);
-      }
-    } else if (tower && tower instanceof window.MissileSilo && tower.level < 5) {
-      const cost = game.getTowerCost('missile');
-      if (game.money >= cost) {
-        game.money -= cost;
-        tower.upgrade();
-        if (typeof window.updateSidebarHUD === 'function') window.updateSidebarHUD(game, game.score, game.lives, game.currentWave, game.money);
-      }
-    }
-  });
-}
 
 showIntroMenu(); 
