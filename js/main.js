@@ -1,5 +1,6 @@
 import { Game } from './game.js';
 import { LaserTower } from './towers/laserTower.js';
+import { SlowTower } from './towers/slowTower.js';
 // import { setupUI } from './ui.js';
 import { generateRandomPath } from './maps/randomPath.js';
 
@@ -14,6 +15,7 @@ let previewWidth = 16;
 let previewHeight = 12;
 
 window.LaserTower = LaserTower;
+window.SlowTower = SlowTower;
 
 function showIntroMenu() {
   previewWidth = lastGridWidth;
@@ -265,6 +267,13 @@ function setupUI(game) {
     const tower = game.towers.find(t => t.tileX === tileX && t.tileY === tileY);
     if (tower && tower instanceof window.LaserTower && tower.level < 5) {
       const cost = game.getTowerCost('laser');
+      if (game.money >= cost) {
+        game.money -= cost;
+        tower.upgrade();
+        if (typeof window.updateSidebarHUD === 'function') window.updateSidebarHUD(game, game.score, game.lives, game.currentWave, game.money);
+      }
+    } else if (tower && tower instanceof window.SlowTower && tower.level < 5) {
+      const cost = game.getTowerCost('slow');
       if (game.money >= cost) {
         game.money -= cost;
         tower.upgrade();

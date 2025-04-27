@@ -1,6 +1,10 @@
 import { Tower } from './tower.js';
 import { SlowProjectile } from '../projectiles/slowProjectile.js';
 import { loadConfig } from '../config.js';
+import { drawSlowTowerLevel2Base, drawSlowTowerLevel2Turret } from './slowTowerLevel2.js';
+import { drawSlowTowerLevel3Base, drawSlowTowerLevel3Turret } from './slowTowerLevel3.js';
+import { drawSlowTowerLevel4Base, drawSlowTowerLevel4Turret } from './slowTowerLevel4.js';
+import { drawSlowTowerLevel5Base, drawSlowTowerLevel5Turret } from './slowTowerLevel5.js';
 
 function angleDiff(a, b) {
   let d = a - b;
@@ -13,11 +17,31 @@ export class SlowTower extends Tower {
   constructor(tileX, tileY, mapConfig, canvas, path) {
     super(tileX, tileY, mapConfig, canvas, path);
     const config = loadConfig();
-    this.rangeTiles = 2.5; // Tiles
-    this.projectileSpeedTiles = config.baseProjectileSpeed * 0.6; // Tiles per second
-    this.fireRate = 1.2;
-    this.cooldown = 0;
-    this.turretTurnSpeed = Math.PI / 1.5; // 120 deg/sec
+    this.level = 1;
+    this.setStatsForLevel(this.level);
+    this.projectileSpeedTiles = config.baseProjectileSpeed * 0.6;
+    this.turretTurnSpeed = Math.PI / 1.5;
+  }
+
+  setStatsForLevel(level) {
+    const stats = [
+      { range: 2.5, fireRate: 1.2, slow: 0.4 }, // Level 1
+      { range: 3.2, fireRate: 1.7, slow: 0.5 }, // Level 2
+      { range: 4.2, fireRate: 2.3, slow: 0.6 }, // Level 3
+      { range: 5.8, fireRate: 3.2, slow: 0.7 }, // Level 4
+      { range: 8.0, fireRate: 4.5, slow: 0.8 }  // Level 5
+    ];
+    const s = stats[Math.max(0, Math.min(level-1, 4))];
+    this.range = s.range;
+    this.fireRate = s.fireRate;
+    this.slowEffect = s.slow;
+  }
+
+  upgrade() {
+    if (this.level < 5) {
+      this.level++;
+      this.setStatsForLevel(this.level);
+    }
   }
 
   update(delta, enemies, projectiles) {
@@ -28,13 +52,17 @@ export class SlowTower extends Tower {
     const speedPixels = this.projectileSpeedTiles * tileSize;
     const vx = Math.cos(this.turretAngle) * speedPixels;
     const vy = Math.sin(this.turretAngle) * speedPixels;
-    projectiles.push(new SlowProjectile(cx, cy, vx, vy));
+    projectiles.push(new SlowProjectile(cx, cy, vx, vy, this.slowEffect));
   }
 
   drawBase(ctx, cx, cy, tileSize) {
+    if (this.level === 2) return drawSlowTowerLevel2Base(ctx, cx, cy, tileSize);
+    if (this.level === 3) return drawSlowTowerLevel3Base(ctx, cx, cy, tileSize);
+    if (this.level === 4) return drawSlowTowerLevel4Base(ctx, cx, cy, tileSize);
+    if (this.level === 5) return drawSlowTowerLevel5Base(ctx, cx, cy, tileSize);
+    // Level 1 (default)
     ctx.save();
     ctx.translate(cx, cy);
-    // Primitive base: small dark circle
     ctx.beginPath();
     ctx.arc(0, tileSize * 0.32, tileSize * 0.13, 0, 2 * Math.PI);
     ctx.fillStyle = '#222';
@@ -45,6 +73,11 @@ export class SlowTower extends Tower {
   }
 
   drawTurret(ctx, cx, cy, tileSize) {
+    if (this.level === 2) return drawSlowTowerLevel2Turret(ctx, cx, cy, tileSize, this.turretAngle);
+    if (this.level === 3) return drawSlowTowerLevel3Turret(ctx, cx, cy, tileSize, this.turretAngle);
+    if (this.level === 4) return drawSlowTowerLevel4Turret(ctx, cx, cy, tileSize, this.turretAngle);
+    if (this.level === 5) return drawSlowTowerLevel5Turret(ctx, cx, cy, tileSize, this.turretAngle);
+    // Level 1 (default)
     ctx.save();
     ctx.translate(cx, cy);
     ctx.rotate(this.turretAngle);
