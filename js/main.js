@@ -1,5 +1,6 @@
 import { Game } from './game.js';
-import { setupUI } from './ui.js';
+import { LaserTower } from './towers/laserTower.js';
+// import { setupUI } from './ui.js';
 import { generateRandomPath } from './maps/randomPath.js';
 
 const canvas = document.getElementById('game-canvas');
@@ -11,6 +12,8 @@ let lastGridHeight = 12;
 let previewPath = null;
 let previewWidth = 16;
 let previewHeight = 12;
+
+window.LaserTower = LaserTower;
 
 function showIntroMenu() {
   previewWidth = lastGridWidth;
@@ -184,9 +187,9 @@ function startGameWithPath(mode, width, height, pathOverride) {
   // TODO: For 'draw', implement custom path drawing UI
   const config = { ...Game.defaultConfig, map: { width, height } };
   const game = new Game(canvas, ctx, config, path);
-setupUI(game);
+  setupUI(game);
   setupSidebar(game);
-game.start(); 
+  game.start();
   window.currentGame = game;
 }
 
@@ -249,5 +252,26 @@ window.updateSidebarHUD = updateSidebarHUD;
 window.addEventListener('resize', () => {
   resizeCanvasToDisplaySize(canvas);
 });
+
+function setupUI(game) {
+  const canvas = document.getElementById('game-canvas');
+  canvas.addEventListener('click', (event) => {
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    const tileSize = Math.min(canvas.width / game.config.map.width, canvas.height / game.config.map.height);
+    const tileX = Math.floor(x / tileSize);
+    const tileY = Math.floor(y / tileSize);
+    const tower = game.towers.find(t => t.tileX === tileX && t.tileY === tileY);
+    if (tower && tower instanceof window.LaserTower && tower.level < 5) {
+      const cost = game.getTowerCost('laser');
+      if (game.money >= cost) {
+        game.money -= cost;
+        tower.upgrade();
+        if (typeof window.updateSidebarHUD === 'function') window.updateSidebarHUD(game, game.score, game.lives, game.currentWave, game.money);
+      }
+    }
+  });
+}
 
 showIntroMenu(); 

@@ -1,9 +1,32 @@
 import { Projectile } from './projectile.js';
 
 export class LaserProjectile extends Projectile {
-  constructor(x, y, vx, vy) {
+  constructor(x, y, vx, vy, target = null, homingStrength = 0) {
     super(x, y, vx, vy);
     this.length = 18;
+    this.target = target;
+    this.homingStrength = homingStrength;
+  }
+
+  update(delta, enemies) {
+    // Homing logic
+    if (this.target && this.homingStrength > 0 && this.target.alive) {
+      const dx = this.target.x - this.x;
+      const dy = this.target.y - this.y;
+      const targetAngle = Math.atan2(dy, dx);
+      const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+      let currentAngle = Math.atan2(this.vy, this.vx);
+      // Interpolate angle
+      let diff = targetAngle - currentAngle;
+      while (diff > Math.PI) diff -= 2 * Math.PI;
+      while (diff < -Math.PI) diff += 2 * Math.PI;
+      currentAngle += diff * this.homingStrength;
+      this.vx = Math.cos(currentAngle) * speed;
+      this.vy = Math.sin(currentAngle) * speed;
+    }
+    // Move as normal
+    this.x += this.vx * delta;
+    this.y += this.vy * delta;
   }
 
   render(ctx, tileSize) {
