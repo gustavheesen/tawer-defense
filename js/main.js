@@ -2,6 +2,7 @@ import { Game } from './game.js';
 import { LaserTower } from './towers/laserTower.js';
 import { SlowTower } from './towers/slowTower.js';
 import { CannonTower } from './towers/cannonTower.js';
+import { MissileSilo } from './towers/missileSilo.js';
 // import { setupUI } from './ui.js';
 import { generateRandomPath } from './maps/randomPath.js';
 
@@ -18,6 +19,7 @@ let previewHeight = 12;
 window.LaserTower = LaserTower;
 window.SlowTower = SlowTower;
 window.CannonTower = CannonTower;
+window.MissileSilo = MissileSilo;
 
 function showIntroMenu() {
   previewWidth = lastGridWidth;
@@ -212,7 +214,12 @@ function setupSidebar(game) {
       <button class="hud-btn" id="hud-tower-cannon">Cannon</button>
       <button class="hud-btn" id="hud-tower-laser">Laser</button>
       <button class="hud-btn" id="hud-tower-slow">Slow</button>
+      <button class="hud-btn" id="hud-tower-missile">Missile Silo</button>
       <button class="hud-btn" id="hud-start-wave">Start Wave</button>
+    </div>
+    <div class="hud-section">
+      <div class="hud-title">Missile Silo</div>
+      <div class="hud-info">Fires powerful homing missiles. Upgrades increase range, fire rate, and missile type.</div>
     </div>
   `;
   document.getElementById('hud-tower-cannon').onclick = () => {
@@ -226,6 +233,9 @@ function setupSidebar(game) {
   document.getElementById('hud-tower-slow').onclick = () => {
     game.selectedTowerType = 'slow';
     updateTowerSelection();
+  };
+  document.getElementById('hud-tower-missile').onclick = () => {
+    game.selectedTowerType = 'missile';
   };
   document.getElementById('hud-start-wave').onclick = () => {
     game.startWave();
@@ -283,6 +293,13 @@ function setupUI(game) {
       }
     } else if (tower && tower instanceof window.CannonTower && tower.level < 5) {
       const cost = game.getTowerCost('cannon');
+      if (game.money >= cost) {
+        game.money -= cost;
+        tower.upgrade();
+        if (typeof window.updateSidebarHUD === 'function') window.updateSidebarHUD(game, game.score, game.lives, game.currentWave, game.money);
+      }
+    } else if (tower && tower instanceof window.MissileSilo && tower.level < 5) {
+      const cost = game.getTowerCost('missile');
       if (game.money >= cost) {
         game.money -= cost;
         tower.upgrade();

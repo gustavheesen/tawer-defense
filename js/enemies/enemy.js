@@ -30,6 +30,15 @@ export class Enemy {
   }
 
   update(delta) {
+    if (this.empStunned && this.empStunned > 0) {
+      this.empStunned -= delta;
+      if (this.empStunned < 0) this.empStunned = 0;
+    }
+    if (this.disabled && this.disabled > 0) {
+      this.disabled -= delta;
+      if (this.disabled < 0) this.disabled = 0;
+      return; // Skip movement and actions while disabled
+    }
     // Move along path
     if (this.pathIndex < this.path.length - 1) {
       const tileSize = getTileSize(this.canvas, this.mapConfig);
@@ -67,6 +76,10 @@ export class Enemy {
 
   render(ctx) {
     ctx.save();
+    if (this.empStunned && this.empStunned > 0) {
+      ctx.shadowColor = '#81d4fa';
+      ctx.shadowBlur = 24;
+    }
     ctx.fillStyle = 'red';
     ctx.beginPath();
     ctx.arc(this.x, this.y, 12, 0, 2 * Math.PI);

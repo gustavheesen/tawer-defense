@@ -1,26 +1,26 @@
-                                                  import { Enemy } from '../enemies/enemy.js';
+import { GuidedMissileProjectile } from './guidedMissileProjectile.js';
 
-export class GuidedMissileProjectile {
-  constructor(x, y, vx, vy, damage, target, small = false, tileSize = 32) {
+export class ClusterMissileProjectile {
+  constructor(x, y, vx, vy, damage, target, tileSize = 32) {
     this.x = x;
     this.y = y;
     this.vx = vx;
     this.vy = vy;
     this.damage = damage;
     this.target = target;
-    this.small = small;
     this.tileSize = tileSize;
-    this.radius = small ? tileSize * 0.13 : tileSize * 0.23;
+    this.radius = tileSize * 0.18;
     this.speed = Math.sqrt(vx * vx + vy * vy);
     this.alive = true;
     this.exploded = false;
-    this.explosionRadius = small ? tileSize * 0.45 : tileSize * 0.9;
-    this.explosionDuration = 12;
+    this.explosionRadius = tileSize * 0.75;
+    this.explosionDuration = 14;
     this.explosionFrame = 0;
     this.trail = [];
+    this.spawned = false;
   }
 
-  update(delta, enemies) {
+  update(delta, enemies, projectiles) {
     if (!this.alive) {
       if (this.exploded) {
         this.explosionFrame++;
@@ -28,7 +28,7 @@ export class GuidedMissileProjectile {
       }
       return;
     }
-    // Always find the closest alive enemy
+    // Homing logic (like GuidedMissileProjectile)
     let closest = null;
     let minDist = Infinity;
     for (const enemy of enemies) {
@@ -41,12 +41,7 @@ export class GuidedMissileProjectile {
         closest = enemy;
       }
     }
-    if (closest) {
-      this.target = closest;
-    } else {
-      this.target = null;
-    }
-    // Homing logic
+    if (closest) this.target = closest;
     if (this.target && this.target.alive) {
       const dx = this.target.x - this.x;
       const dy = this.target.y - this.y;
@@ -56,8 +51,7 @@ export class GuidedMissileProjectile {
         let angleDiff = desiredAngle - Math.atan2(this.vy, this.vx);
         while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
         while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
-        // Turn missile gradually
-        const turnRate = 0.07;
+        const turnRate = 0.06;
         const newAngle = Math.atan2(this.vy, this.vx) + Math.sign(angleDiff) * Math.min(Math.abs(angleDiff), turnRate);
         this.vx = Math.cos(newAngle) * this.speed;
         this.vy = Math.sin(newAngle) * this.speed;
@@ -69,19 +63,19 @@ export class GuidedMissileProjectile {
     // Trail
     this.trail.push({ x: this.x, y: this.y, alpha: 1 });
     if (this.trail.length > 16) this.trail.shift();
-    // Collision with target or any enemy
+    // Collision
     for (const enemy of enemies) {
       if (!enemy.alive) continue;
       const dx = enemy.x - this.x;
       const dy = enemy.y - this.y;
       if (Math.hypot(dx, dy) < this.radius + (enemy.radius || this.tileSize * 0.15)) {
-        this.explode(enemies);
+        this.explode(enemies, projectiles);
         break;
       }
     }
   }
 
-  explode(enemies) {
+  explode(enemies, projectiles) {
     if (this.exploded) return;
     this.exploded = true;
     this.alive = false;
@@ -94,6 +88,17 @@ export class GuidedMissileProjectile {
         enemy.takeDamage(this.damage);
       }
     }
+    // Spawn 3 small homing missiles
+    if (!this.spawned && projectiles) {
+      for (let i = 0; i < 3; i++) {
+        const angle = (i * 2 * Math.PI) / 3;
+        const speed = this.speed * 0.9;
+        const vx = Math.cos(angle) * speed;
+        const vy = Math.sin(angle) * speed;
+        projectiles.push(new GuidedMissileProjectile(this.x, this.y, vx, vy, Math.round(this.damage * 0.5), null, true, this.tileSize));
+      }
+      this.spawned = true;
+    }
   }
 
   render(ctx, tileSize) {
@@ -103,42 +108,32 @@ export class GuidedMissileProjectile {
       ctx.globalAlpha = 0.7 * (1 - this.explosionFrame / this.explosionDuration);
       ctx.beginPath();
       ctx.arc(this.x, this.y, this.explosionRadius * (this.explosionFrame / this.explosionDuration), 0, 2 * Math.PI);
-      ctx.fillStyle = this.small ? '#b3e5fc' : '#ffecb3';
+      ctx.fillStyle = '#c8e6c9';
       ctx.fill();
       ctx.beginPath();
-      ctx.arc(this.x, this.y, (this.explosionRadius * 0.5) * (this.explosionFrame / this.explosionDuration), 0, 2 * Math.PI);
-      ctx.fillStyle = this.small ? '#0288d1' : '#ff9800';
+      ctx.arc(this.x, this.y, this.explosionRadius * 0.5 * (this.explosionFrame / this.explosionDuration), 0, 2 * Math.PI);
+      ctx.fillStyle = '#43a047';
       ctx.fill();
       ctx.restore();
       return;
     }
-    // Missile body
+    // Missile body (green tip)
     ctx.save();
     ctx.translate(this.x, this.y);
     ctx.rotate(Math.atan2(this.vy, this.vx));
-    ctx.fillStyle = this.small ? '#b3e5fc' : '#bdbdbd';
+    ctx.fillStyle = '#bdbdbd';
     ctx.strokeStyle = '#222';
     ctx.lineWidth = tileSize * 0.06;
     ctx.beginPath();
-    ctx.ellipse(0, 0, this.small ? tileSize * 0.13 : tileSize * 0.23, this.small ? tileSize * 0.05 : tileSize * 0.09, 0, 0, 2 * Math.PI);
+    ctx.ellipse(0, 0, tileSize * 0.20, tileSize * 0.08, 0, 0, 2 * Math.PI);
     ctx.fill();
     ctx.stroke();
-    // Nose
+    // Green tip
     ctx.beginPath();
-    ctx.arc(this.small ? tileSize * 0.10 : tileSize * 0.18, 0, this.small ? tileSize * 0.04 : tileSize * 0.08, 0, 2 * Math.PI);
-    ctx.fillStyle = this.small ? '#0288d1' : '#ff9800';
+    ctx.arc(tileSize * 0.16, 0, tileSize * 0.07, 0, 2 * Math.PI);
+    ctx.fillStyle = '#43a047';
     ctx.fill();
     ctx.stroke();
-    // Fins
-    ctx.fillStyle = this.small ? '#4fc3f7' : '#607d8b';
-    ctx.beginPath();
-    ctx.moveTo(this.small ? -tileSize * 0.08 : -tileSize * 0.16, this.small ? -tileSize * 0.05 : -tileSize * 0.09);
-    ctx.lineTo(this.small ? -tileSize * 0.15 : -tileSize * 0.29, this.small ? -tileSize * 0.10 : -tileSize * 0.18);
-    ctx.lineTo(this.small ? -tileSize * 0.07 : -tileSize * 0.13, 0);
-    ctx.lineTo(this.small ? -tileSize * 0.15 : -tileSize * 0.29, this.small ? tileSize * 0.10 : tileSize * 0.18);
-    ctx.lineTo(this.small ? -tileSize * 0.08 : -tileSize * 0.16, this.small ? tileSize * 0.05 : tileSize * 0.09);
-    ctx.closePath();
-    ctx.fill();
     ctx.restore();
     // Trail
     for (let i = 0; i < this.trail.length; i++) {
@@ -146,15 +141,10 @@ export class GuidedMissileProjectile {
       ctx.save();
       ctx.globalAlpha = t.alpha * 0.3;
       ctx.beginPath();
-      ctx.arc(t.x, t.y, this.small ? tileSize * 0.07 : tileSize * 0.14, 0, 2 * Math.PI);
-      ctx.fillStyle = this.small ? '#b3e5fc' : '#90caf9';
+      ctx.arc(t.x, t.y, tileSize * 0.10, 0, 2 * Math.PI);
+      ctx.fillStyle = '#c8e6c9';
       ctx.fill();
       ctx.restore();
     }
   }
-}
-
-// Make available globally for CannonTower
-if (typeof window !== 'undefined') {
-  window.GuidedMissileProjectile = GuidedMissileProjectile;
 } 

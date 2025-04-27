@@ -1,12 +1,14 @@
 import { Projectile } from './projectile.js';
 
 export class SlowProjectile extends Projectile {
-  constructor(x, y, vx, vy) {
+  constructor(x, y, vx, vy, tileSize = 32) {
     super(x, y, vx, vy);
-    this.radius = 10;
+    this.tileSize = tileSize;
+    this.radius = tileSize * 0.22;
   }
 
   render(ctx, tileSize) {
+    tileSize = tileSize || this.tileSize;
     // Draw a cyan arrow pointing in the direction of travel
     const angle = Math.atan2(this.vy, this.vx);
     const size = tileSize * 0.35;
@@ -24,7 +26,7 @@ export class SlowProjectile extends Projectile {
   }
 
   getHitRadius() {
-    return 16;
+    return this.tileSize * 0.35;
   }
 
   applyEffect(enemy) {

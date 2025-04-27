@@ -1,11 +1,13 @@
 import { Projectile } from './projectile.js';
 
 export class LaserProjectile extends Projectile {
-  constructor(x, y, vx, vy, target = null, homingStrength = 0) {
+  constructor(x, y, vx, vy, target = null, homingStrength = 0, tileSize = 32) {
     super(x, y, vx, vy);
-    this.length = 18;
+    this.length = tileSize * 0.45;
+    this.thickness = tileSize * 0.1;
     this.target = target;
     this.homingStrength = homingStrength;
+    this.tileSize = tileSize;
   }
 
   update(delta, enemies) {
@@ -30,6 +32,7 @@ export class LaserProjectile extends Projectile {
   }
 
   render(ctx, tileSize) {
+    tileSize = tileSize || this.tileSize;
     // Draw a magenta line in the direction of travel
     const angle = Math.atan2(this.vy, this.vx);
     const length = tileSize * 0.45;
@@ -47,7 +50,7 @@ export class LaserProjectile extends Projectile {
   }
 
   getHitRadius() {
-    return 5;
+    return this.tileSize * 0.1;
   }
 
   applyEffect(enemy) {

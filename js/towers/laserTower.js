@@ -70,7 +70,7 @@ export class LaserTower extends Tower {
       const speedPixels = this.projectileSpeedTiles * tileSize;
       const vx = Math.cos(this.turretAngle) * speedPixels;
       const vy = Math.sin(this.turretAngle) * speedPixels;
-      projectiles.push(new LaserProjectile(cx, cy, vx, vy, target, this.homingStrength));
+      projectiles.push(new LaserProjectile(cx, cy, vx, vy, target, this.homingStrength, tileSize));
     }
   }
 

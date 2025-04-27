@@ -1,15 +1,17 @@
 import { Projectile } from './projectile.js';
 
 export class CannonProjectile extends Projectile {
-  constructor(x, y, vx, vy) {
+  constructor(x, y, vx, vy, tileSize = 32) {
     super(x, y, vx, vy);
-    this.radius = 8;
+    this.tileSize = tileSize;
+    this.radius = tileSize * 0.15;
   }
 
   render(ctx, tileSize) {
+    tileSize = tileSize || this.tileSize;
     // Draw a blue arrow pointing in the direction of travel
     const angle = Math.atan2(this.vy, this.vx);
-    const size = tileSize * 0.3; // Base size scaled by tile size
+    const size = tileSize * 0.3;
     ctx.save();
     ctx.translate(this.x, this.y);
     ctx.rotate(angle);
@@ -24,7 +26,7 @@ export class CannonProjectile extends Projectile {
   }
 
   getHitRadius() {
-    return 16;
+    return this.tileSize * 0.3;
   }
 
   applyEffect(enemy) {

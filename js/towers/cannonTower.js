@@ -95,7 +95,7 @@ export class CannonTower extends Tower {
     const speedPixels = this.projectileSpeedTiles * tileSize;
     const vx = Math.cos(this.turretAngle) * speedPixels;
     const vy = Math.sin(this.turretAngle) * speedPixels;
-    projectiles.push(new CannonProjectile(cx, cy, vx, vy, this.damage));
+    projectiles.push(new CannonProjectile(cx, cy, vx, vy, tileSize));
   }
 
   drawBase(ctx, cx, cy, tileSize) {

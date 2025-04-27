@@ -52,7 +52,7 @@ export class SlowTower extends Tower {
     const speedPixels = this.projectileSpeedTiles * tileSize;
     const vx = Math.cos(this.turretAngle) * speedPixels;
     const vy = Math.sin(this.turretAngle) * speedPixels;
-    projectiles.push(new SlowProjectile(cx, cy, vx, vy, this.slowEffect));
+    projectiles.push(new SlowProjectile(cx, cy, vx, vy, tileSize));
   }
 
   drawBase(ctx, cx, cy, tileSize) {

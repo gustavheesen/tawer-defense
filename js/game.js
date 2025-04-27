@@ -24,6 +24,9 @@ import { HealerEnemy } from './enemies/healerEnemy.js';
 import { SpeedBurstEnemy } from './enemies/speedBurstEnemy.js';
 import { StealthEnemy } from './enemies/stealthEnemy.js';
 import { EMPEnemy } from './enemies/empEnemy.js';
+import { MissileSilo } from './towers/missileSilo.js';
+import { ClusterMissileProjectile } from './projectiles/clusterMissileProjectile.js';
+import { EMPMissileProjectile } from './projectiles/empMissileProjectile.js';
 // import { updateSidebarHUD } from './main.js';
 
 function getPathTiles(path) {
@@ -47,7 +50,8 @@ function getPathTiles(path) {
 const TOWER_CLASSES = {
   cannon: CannonTower,
   laser: LaserTower,
-  slow: SlowTower
+  slow: SlowTower,
+  missile: MissileSilo
 };
 
 export class Game {
@@ -77,6 +81,7 @@ export class Game {
       case 'cannon': return 50;
       case 'laser': return 80;
       case 'slow': return 60;
+      case 'missile': return 120;
       default: return 50;
     }
   }
@@ -274,7 +279,13 @@ export class Game {
     this.enemies.push(...newEnemies);
     // Update projectiles
     for (const proj of this.projectiles) {
-      proj.update(delta, this.enemies);
+      if (proj instanceof ClusterMissileProjectile) {
+        proj.update(delta, this.enemies, this.projectiles);
+      } else if (proj instanceof EMPMissileProjectile) {
+        proj.update(delta, this.enemies);
+      } else {
+        proj.update(delta, this.enemies);
+      }
     }
     // Remove dead projectiles
     this.projectiles = this.projectiles.filter(p => p.alive);
