@@ -1,6 +1,11 @@
 import { Tower } from './tower.js';
 import { CannonProjectile } from '../projectiles/bullet.js';
 import { loadConfig } from '../config.js';
+import { drawCannonTowerLevel2Base, drawCannonTowerLevel2Turret } from './cannonTowerLevel2.js';
+import { drawCannonTowerLevel3Base, drawCannonTowerLevel3Turret } from './cannonTowerLevel3.js';
+import { drawCannonTowerLevel4Base, drawCannonTowerLevel4Turret } from './cannonTowerLevel4.js';
+import { drawCannonTowerLevel5Base, drawCannonTowerLevel5Turret } from './cannonTowerLevel5.js';
+import { GuidedMissileProjectile } from '../projectiles/guidedMissileProjectile.js';
 
 function angleDiff(a, b) {
   let d = a - b;
@@ -13,25 +18,92 @@ export class CannonTower extends Tower {
   constructor(tileX, tileY, mapConfig, canvas, path) {
     super(tileX, tileY, mapConfig, canvas, path);
     const config = loadConfig();
-    this.rangeTiles = 5; // Tiles
-    this.projectileSpeedTiles = config.baseProjectileSpeed * 0.8; // Tiles per second
-    this.fireRate = 0.7;
-    this.cooldown = 0;
-    this.turretTurnSpeed = Math.PI / 4; // 45 deg/sec
+    this.level = 1;
+    this.setStatsForLevel(this.level);
+    this.projectileSpeedTiles = config.baseProjectileSpeed * 0.8;
+    this.turretTurnSpeed = Math.PI / 4;
+  }
+
+  setStatsForLevel(level) {
+    const stats = [
+      { range: 5, fireRate: 0.7, damage: 6, turnSpeed: Math.PI / 4 }, // Level 1
+      { range: 6, fireRate: 1.1, damage: 10, turnSpeed: Math.PI / 3 }, // Level 2
+      { range: 7.5, fireRate: 1.7, damage: 16, turnSpeed: Math.PI / 2 }, // Level 3
+      { range: 9.5, fireRate: 2.5, damage: 24, turnSpeed: (2 * Math.PI) / 3 }, // Level 4
+      { range: 12, fireRate: 3.5, damage: 36, turnSpeed: Math.PI }  // Level 5
+    ];
+    const s = stats[Math.max(0, Math.min(level-1, 4))];
+    this.range = s.range;
+    this.fireRate = s.fireRate;
+    this.damage = s.damage;
+    this.turretTurnSpeed = s.turnSpeed;
+  }
+
+  upgrade() {
+    if (this.level < 5) {
+      this.level++;
+      this.setStatsForLevel(this.level);
+    }
   }
 
   update(delta, enemies, projectiles) {
-    super.update(delta, enemies, projectiles);
+    this.cooldown -= delta;
+    const tileSize = this.canvas.width / this.mapConfig.width;
+    const cx = this.tileX * tileSize + tileSize / 2;
+    const cy = this.tileY * tileSize + tileSize / 2;
+    const rangePixels = this.range * tileSize;
+
+    let nearest = null;
+    let nearestDist = Infinity;
+    let targetAngle = this.turretAngle;
+    for (const enemy of enemies) {
+      const dx = enemy.x - cx;
+      const dy = enemy.y - cy;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < rangePixels && dist < nearestDist) {
+        nearest = enemy;
+        nearestDist = dist;
+        targetAngle = Math.atan2(dy, dx);
+      }
+    }
+
+    // If no enemy in range, aim at path start point
+    if (!nearest && this.path && this.path[0]) {
+      const startX = this.path[0].x * tileSize + tileSize / 2;
+      const startY = this.path[0].y * tileSize + tileSize / 2;
+      targetAngle = Math.atan2(startY - cy, startX - cx);
+    }
+
+    // Rotate turret toward target
+    let diff = angleDiff(targetAngle, this.turretAngle);
+    const maxTurn = this.turretTurnSpeed * delta;
+    if (Math.abs(diff) < maxTurn) {
+      this.turretAngle = targetAngle;
+    } else {
+      this.turretAngle += Math.sign(diff) * maxTurn;
+    }
+
+    // Only fire if aimed within 5 degrees
+    if (nearest && this.cooldown <= 0 && Math.abs(angleDiff(targetAngle, this.turretAngle)) < 0.087) {
+      this.fireProjectile(cx, cy, projectiles, tileSize, enemies);
+      this.cooldown = 1 / this.fireRate;
+    }
   }
 
-  fireProjectile(cx, cy, projectiles, tileSize) {
+  fireProjectile(cx, cy, projectiles, tileSize, enemies = []) {
+    // Only fire normal cannon shell
     const speedPixels = this.projectileSpeedTiles * tileSize;
     const vx = Math.cos(this.turretAngle) * speedPixels;
     const vy = Math.sin(this.turretAngle) * speedPixels;
-    projectiles.push(new CannonProjectile(cx, cy, vx, vy));
+    projectiles.push(new CannonProjectile(cx, cy, vx, vy, this.damage));
   }
 
   drawBase(ctx, cx, cy, tileSize) {
+    if (this.level === 2) return drawCannonTowerLevel2Base(ctx, cx, cy, tileSize);
+    if (this.level === 3) return drawCannonTowerLevel3Base(ctx, cx, cy, tileSize);
+    if (this.level === 4) return drawCannonTowerLevel4Base(ctx, cx, cy, tileSize);
+    if (this.level === 5) return drawCannonTowerLevel5Base(ctx, cx, cy, tileSize);
+    // Level 1 (default)
     // Draw a pixel-art stepped 'X' base with black outline
     ctx.save();
     ctx.translate(cx, cy);
@@ -102,6 +174,11 @@ export class CannonTower extends Tower {
   }
 
   drawTurret(ctx, cx, cy, tileSize) {
+    if (this.level === 2) return drawCannonTowerLevel2Turret(ctx, cx, cy, tileSize, this.turretAngle);
+    if (this.level === 3) return drawCannonTowerLevel3Turret(ctx, cx, cy, tileSize, this.turretAngle);
+    if (this.level === 4) return drawCannonTowerLevel4Turret(ctx, cx, cy, tileSize, this.turretAngle);
+    if (this.level === 5) return drawCannonTowerLevel5Turret(ctx, cx, cy, tileSize, this.turretAngle);
+    // Level 1 (default)
     // Draw a thick, dark turret barrel with a round tip and black outline
     ctx.save();
     ctx.translate(cx, cy);

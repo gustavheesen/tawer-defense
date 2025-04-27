@@ -1,6 +1,7 @@
 import { Game } from './game.js';
 import { LaserTower } from './towers/laserTower.js';
 import { SlowTower } from './towers/slowTower.js';
+import { CannonTower } from './towers/cannonTower.js';
 // import { setupUI } from './ui.js';
 import { generateRandomPath } from './maps/randomPath.js';
 
@@ -16,6 +17,7 @@ let previewHeight = 12;
 
 window.LaserTower = LaserTower;
 window.SlowTower = SlowTower;
+window.CannonTower = CannonTower;
 
 function showIntroMenu() {
   previewWidth = lastGridWidth;
@@ -189,9 +191,9 @@ function startGameWithPath(mode, width, height, pathOverride) {
   // TODO: For 'draw', implement custom path drawing UI
   const config = { ...Game.defaultConfig, map: { width, height } };
   const game = new Game(canvas, ctx, config, path);
-  setupUI(game);
+setupUI(game);
   setupSidebar(game);
-  game.start();
+game.start(); 
   window.currentGame = game;
 }
 
@@ -274,6 +276,13 @@ function setupUI(game) {
       }
     } else if (tower && tower instanceof window.SlowTower && tower.level < 5) {
       const cost = game.getTowerCost('slow');
+      if (game.money >= cost) {
+        game.money -= cost;
+        tower.upgrade();
+        if (typeof window.updateSidebarHUD === 'function') window.updateSidebarHUD(game, game.score, game.lives, game.currentWave, game.money);
+      }
+    } else if (tower && tower instanceof window.CannonTower && tower.level < 5) {
+      const cost = game.getTowerCost('cannon');
       if (game.money >= cost) {
         game.money -= cost;
         tower.upgrade();
