@@ -205,87 +205,58 @@ export class Game {
 
   startWave() {
     const wave = this.currentWave;
-    // Increase enemy counts and health per wave
-    const tankCount = 2 + Math.floor(wave / 2);
-    const infantryCount = 3 + wave;
-    const spiderCount = 2 + Math.floor(wave / 3);
-    const bomberCount = 2 + Math.floor(wave / 4);
-    const ghostCount = 2 + Math.floor(wave / 5);
-    const splitterCount = 2 + Math.floor(wave / 4);
-    const shieldedCount = 2 + Math.floor(wave / 6);
-    const regenCount = 2 + Math.floor(wave / 6);
-    const armoredCount = 2 + Math.floor(wave / 7);
-    const healerCount = 2 + Math.floor(wave / 8);
-    const speedBurstCount = 2 + Math.floor(wave / 5);
-    const stealthCount = 2 + Math.floor(wave / 6);
-    const empCount = 1 + Math.floor(wave / 10);
-    let delay = 0;
-    for (let i = 0; i < tankCount; i++) {
-      setTimeout(() => {
-        this.enemies.push(new TankEnemy(this.path, this.config.map, this.canvas));
-      }, delay); delay += 900;
+    let enemiesToSpawn = [];
+    if (wave === 1) {
+      enemiesToSpawn = [
+        () => new TankEnemy(this.path, this.config.map, this.canvas),
+        () => new TankEnemy(this.path, this.config.map, this.canvas)
+      ];
+    } else if (wave === 2) {
+      enemiesToSpawn = [
+        () => new TankEnemy(this.path, this.config.map, this.canvas),
+        () => new TankEnemy(this.path, this.config.map, this.canvas),
+        () => new GhostEnemy(this.path, this.config.map, this.canvas)
+      ];
+    } else if (wave === 3) {
+      enemiesToSpawn = [
+        () => new TankEnemy(this.path, this.config.map, this.canvas),
+        () => new TankEnemy(this.path, this.config.map, this.canvas),
+        () => new GhostEnemy(this.path, this.config.map, this.canvas),
+        () => new GhostEnemy(this.path, this.config.map, this.canvas)
+      ];
+    } else if (wave === 4) {
+      enemiesToSpawn = [
+        ...Array(3).fill(() => new TankEnemy(this.path, this.config.map, this.canvas)),
+        ...Array(2).fill(() => new GhostEnemy(this.path, this.config.map, this.canvas)),
+        () => new SpiderEnemy(this.path, this.config.map, this.canvas)
+      ];
+    } else if (wave === 5) {
+      enemiesToSpawn = [
+        ...Array(3).fill(() => new TankEnemy(this.path, this.config.map, this.canvas)),
+        ...Array(3).fill(() => new GhostEnemy(this.path, this.config.map, this.canvas)),
+        ...Array(2).fill(() => new SpiderEnemy(this.path, this.config.map, this.canvas)),
+        () => new InfantryEnemy(this.path, this.config.map, this.canvas)
+      ];
+    } else {
+      const tanks = 3 + Math.floor(wave / 2);
+      const ghosts = 2 + Math.floor(wave / 2);
+      const spiders = 1 + Math.floor(wave / 3);
+      const infantry = Math.floor(wave / 3);
+      enemiesToSpawn = [
+        ...Array(tanks).fill(() => new TankEnemy(this.path, this.config.map, this.canvas)),
+        ...Array(ghosts).fill(() => new GhostEnemy(this.path, this.config.map, this.canvas)),
+        ...Array(spiders).fill(() => new SpiderEnemy(this.path, this.config.map, this.canvas)),
+        ...Array(infantry).fill(() => new InfantryEnemy(this.path, this.config.map, this.canvas))
+      ];
     }
-    for (let i = 0; i < infantryCount; i++) {
+    // Spawn all enemies over 1 second
+    const total = enemiesToSpawn.length;
+    enemiesToSpawn.forEach((createEnemy, i) => {
       setTimeout(() => {
-        this.enemies.push(new InfantryEnemy(this.path, this.config.map, this.canvas));
-      }, delay); delay += 500;
-    }
-    for (let i = 0; i < spiderCount; i++) {
-      setTimeout(() => {
-        this.enemies.push(new SpiderEnemy(this.path, this.config.map, this.canvas));
-      }, delay); delay += 350;
-    }
-    for (let i = 0; i < bomberCount; i++) {
-      setTimeout(() => {
-        this.enemies.push(new BomberEnemy(this.path, this.config.map, this.canvas));
-      }, delay); delay += 1100;
-    }
-    for (let i = 0; i < ghostCount; i++) {
-      setTimeout(() => {
-        this.enemies.push(new GhostEnemy(this.path, this.config.map, this.canvas));
-      }, delay); delay += 700;
-    }
-    for (let i = 0; i < splitterCount; i++) {
-      setTimeout(() => {
-        this.enemies.push(new SplitterEnemy(this.path, this.config.map, this.canvas));
-      }, delay); delay += 900;
-    }
-    for (let i = 0; i < shieldedCount; i++) {
-      setTimeout(() => {
-        this.enemies.push(new ShieldedEnemy(this.path, this.config.map, this.canvas));
-      }, delay); delay += 800;
-    }
-    for (let i = 0; i < regenCount; i++) {
-      setTimeout(() => {
-        this.enemies.push(new RegeneratingEnemy(this.path, this.config.map, this.canvas));
-      }, delay); delay += 900;
-    }
-    for (let i = 0; i < armoredCount; i++) {
-      setTimeout(() => {
-        this.enemies.push(new ArmoredEnemy(this.path, this.config.map, this.canvas));
-      }, delay); delay += 950;
-    }
-    for (let i = 0; i < healerCount; i++) {
-      setTimeout(() => {
-        this.enemies.push(new HealerEnemy(this.path, this.config.map, this.canvas));
-      }, delay); delay += 1000;
-    }
-    for (let i = 0; i < speedBurstCount; i++) {
-      setTimeout(() => {
-        this.enemies.push(new SpeedBurstEnemy(this.path, this.config.map, this.canvas));
-      }, delay); delay += 600;
-    }
-    for (let i = 0; i < stealthCount; i++) {
-      setTimeout(() => {
-        this.enemies.push(new StealthEnemy(this.path, this.config.map, this.canvas));
-      }, delay); delay += 800;
-    }
-    for (let i = 0; i < empCount; i++) {
-      setTimeout(() => {
-        this.enemies.push(new EMPEnemy(this.path, this.config.map, this.canvas));
-      }, delay); delay += 1500;
-    }
-    updateGameInfoBar(this);
+        this.enemies.push(createEnemy());
+        updateGameInfoBar(this);
+      }, Math.floor((i * 1000) / total));
+    });
   }
 
   loop(timestamp) {
