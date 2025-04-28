@@ -281,10 +281,8 @@ const origHandleCanvasClick = Game.prototype.handleCanvasClick;
 Game.prototype.handleCanvasClick = function(event) {
   // Only handle genuine mouse clicks (not touch or synthetic events)
   if (event.pointerType === 'touch' || event.type === 'touchend' || event.isSynthetic) {
-    //console.log('[main.js] Skipping handleCanvasClick for touch/synthetic event', event);
     return;
   }
-  //console.log('[handleCanvasClick] Canvas click event fired', event);
   const rect = this.canvas.getBoundingClientRect();
   const x = event.clientX - rect.left;
   const y = event.clientY - rect.top;
@@ -298,6 +296,11 @@ Game.prototype.handleCanvasClick = function(event) {
     if (this.updateUpgradeSection) this.updateUpgradeSection();
     console.log('[Tower Selection] Selected tower at', tileX, tileY, clickedTower);
     if (typeof window.updateSidebarHUD === 'function') window.updateSidebarHUD(this, this.score, this.lives, this.currentWave, this.money);
+    // Patch: Always update sidebar HUD after selection
+    if (typeof renderSidebarHUD === 'function') {
+      console.log('[main.js] Calling renderSidebarHUD after selecting tower');
+      renderSidebarHUD(this, document.getElementById('sidebar'));
+    }
     return;
   }
   if (this.selectedTower) {
@@ -306,6 +309,11 @@ Game.prototype.handleCanvasClick = function(event) {
   this.selectedTower = null;
   if (this.updateUpgradeSection) this.updateUpgradeSection();
   if (typeof window.updateSidebarHUD === 'function') window.updateSidebarHUD(this, this.score, this.lives, this.currentWave, this.money);
+  // Patch: Always update sidebar HUD after deselection
+  if (typeof renderSidebarHUD === 'function') {
+    console.log('[main.js] Calling renderSidebarHUD after deselecting tower');
+    renderSidebarHUD(this, document.getElementById('sidebar'));
+  }
   // Otherwise, place tower as normal
   origHandleCanvasClick.call(this, event);
 };

@@ -28,6 +28,7 @@ import { MissileSilo } from './towers/missileSilo.js';
 import { ClusterMissileProjectile } from './projectiles/clusterMissileProjectile.js';
 import { EMPMissileProjectile } from './projectiles/empMissileProjectile.js';
 import { updateGameInfoBar } from './ui/GameInfoBar.js';
+import { renderSidebarHUD } from './ui/SidebarHUD.js';
 // import { updateSidebarHUD } from './main.js';
 
 function getPathTiles(path) {
@@ -128,12 +129,20 @@ export class Game {
           this.selectedTower = clickedTower;
           if (this.updateUpgradeSection) this.updateUpgradeSection();
           console.log('[Tower Selection] (touchend) Selected tower at', tileX, tileY, clickedTower);
+          if (typeof renderSidebarHUD === 'function') {
+            console.log('[game.js] Calling renderSidebarHUD after selecting tower (touch)');
+            renderSidebarHUD(this, document.getElementById('sidebar'));
+          }
         } else {
           if (this.selectedTower) {
             console.log('[Tower Selection] (touchend) Deselected tower');
           }
           this.selectedTower = null;
           if (this.updateUpgradeSection) this.updateUpgradeSection();
+          if (typeof renderSidebarHUD === 'function') {
+            console.log('[game.js] Calling renderSidebarHUD after deselecting tower (touch)');
+            renderSidebarHUD(this, document.getElementById('sidebar'));
+          }
         }
       }
     }, { passive: false });
