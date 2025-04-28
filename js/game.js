@@ -79,19 +79,45 @@ export class Game {
     // Track mouse position
     this.mouseX = 0;
     this.mouseY = 0;
+    this.touchX = null;
+    this.touchY = null;
+    this.isTouchActive = false;
     this.canvas.addEventListener('mousemove', (event) => {
+      this.isTouchActive = false;
       const rect = this.canvas.getBoundingClientRect();
       this.mouseX = event.clientX - rect.left;
       this.mouseY = event.clientY - rect.top;
     });
-
-    // Add mouseup listener for tower placement
+    // Add mouseup listener for tower placement (desktop)
     this.canvas.addEventListener('mouseup', (event) => {
-      if (this.isDragging && this.selectedTowerType) {
+      if (!this.isTouchActive && this.isDragging && this.selectedTowerType) {
         this.handleTowerPlacement(event);
       }
     });
-
+    // Track touch position for mobile drag
+    this.canvas.addEventListener('touchmove', (event) => {
+      this.isTouchActive = true;
+      if (event.touches && event.touches.length > 0) {
+        const rect = this.canvas.getBoundingClientRect();
+        this.touchX = event.touches[0].clientX - rect.left;
+        this.touchY = event.touches[0].clientY - rect.top;
+        console.log('[touchmove] touchX:', this.touchX, 'touchY:', this.touchY, 'canvas rect:', rect.left, rect.top, rect.width, rect.height);
+        this.render(); // Force re-render so preview updates
+      }
+    }, { passive: false });
+    // Place tower on touchend (mobile)
+    this.canvas.addEventListener('touchend', (event) => {
+      if (this.isTouchActive && this.isDragging && this.selectedTowerType && this.touchX !== null && this.touchY !== null) {
+        // Synthesize a mouse-like event
+        const fakeEvent = {
+          clientX: this.touchX + this.canvas.getBoundingClientRect().left,
+          clientY: this.touchY + this.canvas.getBoundingClientRect().top
+        };
+        this.handleTowerPlacement(fakeEvent);
+        this.touchX = null;
+        this.touchY = null;
+      }
+    });
     // Add click listener for tower selection
     this.canvas.addEventListener('click', this.handleCanvasClick.bind(this));
   }
@@ -110,9 +136,13 @@ export class Game {
     const rect = this.canvas.getBoundingClientRect();
     const scaleX = this.canvas.width / rect.width;
     const scaleY = this.canvas.height / rect.height;
-    const x = (event.clientX - rect.left) * scaleX;
-    const y = (event.clientY - rect.top) * scaleY;
+    let x = (event.clientX - rect.left) * scaleX;
+    let y = (event.clientY - rect.top) * scaleY;
     const tileSize = Math.min(this.canvas.width / this.config.map.width, this.canvas.height / this.config.map.height);
+    // If touch, place one tile above finger (to match preview)
+    if (this.isTouchActive) {
+      y -= tileSize;
+    }
     const tileX = Math.floor(x / tileSize);
     const tileY = Math.floor(y / tileSize);
 
@@ -363,15 +393,27 @@ export class Game {
     const rect = this.canvas.getBoundingClientRect();
     const scaleX = this.canvas.width / rect.width;
     const scaleY = this.canvas.height / rect.height;
-    const mouseX = this.mouseX * scaleX;
-    const mouseY = this.mouseY * scaleY;
-    const tileSize = Math.min(this.canvas.width / this.config.map.width, this.canvas.height / this.config.map.height);
-    const tileX = Math.floor(mouseX / tileSize);
-    const tileY = Math.floor(mouseY / tileSize);
+    let px, py;
+    let tileSize = Math.min(this.canvas.width / this.config.map.width, this.canvas.height / this.config.map.height);
+    if (this.isTouchActive && this.touchX !== null && this.touchY !== null) {
+      // Touch: show preview one tile above finger (fix: only subtract tileSize once)
+      px = this.touchX * scaleX;
+      py = this.touchY * scaleY - tileSize;
+      console.log('[renderTowerPreview] touch px:', px, 'py:', py, 'tileSize:', tileSize);
+    } else {
+      // Mouse: show preview under cursor
+      px = this.mouseX * scaleX;
+      py = this.mouseY * scaleY;
+      console.log('[renderTowerPreview] mouse px:', px, 'py:', py);
+    }
+    const tileX = Math.floor(px / tileSize);
+    const tileY = Math.floor(py / tileSize);
+    console.log('[renderTowerPreview] tileX:', tileX, 'tileY:', tileY, 'isTouchActive:', this.isTouchActive, 'selectedTowerType:', this.selectedTowerType);
 
     // Check if placement is valid
     const isValidPlacement = !this.pathTiles.has(`${tileX},${tileY}`) && 
                            !this.towers.some(t => t.tileX === tileX && t.tileY === tileY);
+    console.log('[renderTowerPreview] isValidPlacement:', isValidPlacement);
 
     // Create a temporary tower for preview
     const TowerClass = this.TOWER_CLASSES[this.selectedTowerType];

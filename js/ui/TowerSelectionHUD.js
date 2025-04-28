@@ -114,24 +114,43 @@ export function renderTowerSelectionHUD(game, container) {
     }
   });
 
-  // Set up drag and drop
+  // Helper to check if a point is over the canvas
+  function isOverCanvas(x, y) {
+    const rect = game.canvas.getBoundingClientRect();
+    return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+  }
+
   let draggedTower = null;
   let dragOffset = { x: 0, y: 0 };
+  let isTouch = false;
+  let touchActive = false;
 
-  // Prevent text selection on body during drag
-  function setBodyUserSelect(value) {
-    document.body.style.userSelect = value;
-    document.body.style.webkitUserSelect = value;
-    document.body.style.msUserSelect = value;
-    document.body.style.mozUserSelect = value;
+  // Helper to get tile position for preview (above finger on mobile)
+  function getPreviewPosition(e) {
+    if (isTouch && e.touches && e.touches.length > 0) {
+      // On mobile, offset preview one tile above finger
+      const touch = e.touches[0];
+      const rect = game.canvas.getBoundingClientRect();
+      const tileSize = Math.min(game.canvas.width / game.mapConfig.width, game.canvas.height / game.mapConfig.height);
+      const x = (touch.clientX - rect.left) / (rect.width / game.canvas.width);
+      const y = (touch.clientY - rect.top) / (rect.height / game.canvas.height) - tileSize; // 1 tile above
+      return { x, y };
+    } else if (e.clientX !== undefined) {
+      // Desktop: use mouse position
+      const rect = game.canvas.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / (rect.width / game.canvas.width);
+      const y = (e.clientY - rect.top) / (rect.height / game.canvas.height);
+      return { x, y };
+    }
+    return null;
   }
 
   container.querySelectorAll('.tower-preview').forEach(preview => {
     preview.addEventListener('mousedown', (e) => {
+      isTouch = false;
       const type = preview.dataset.tower;
       const cost = game.getTowerCost(type);
       if (game.money < cost) {
-        // Show feedback that player can't afford
         preview.style.animation = 'shake 0.5s';
         setTimeout(() => preview.style.animation = '', 500);
         return;
@@ -145,21 +164,118 @@ export function renderTowerSelectionHUD(game, container) {
       setBodyUserSelect('none');
       e.preventDefault();
     });
+    // Touch support
+    preview.addEventListener('touchstart', (e) => {
+      isTouch = true;
+      touchActive = true;
+      game.isTouchActive = true;
+      const type = preview.dataset.tower;
+      const cost = game.getTowerCost(type);
+      if (game.money < cost) {
+        preview.style.animation = 'shake 0.5s';
+        setTimeout(() => preview.style.animation = '', 500);
+        return;
+      }
+      draggedTower = type;
+      preview.classList.add('dragging');
+      setBodyUserSelect('none');
+      game.isDragging = true;
+      game.selectedTowerType = type;
+      console.log('[touchstart] Dragging tower:', type, 'at', e.touches[0]?.clientX, e.touches[0]?.clientY);
+      e.preventDefault();
+    }, { passive: false });
   });
 
   document.addEventListener('mousemove', (e) => {
-    if (!draggedTower) return;
+    if (!draggedTower || isTouch) return;
     game.selectedTowerType = draggedTower;
     game.isDragging = true;
   });
+  document.addEventListener('touchmove', (e) => {
+    if (!draggedTower || !isTouch) return;
+    game.isTouchActive = true;
+    if (e.touches && e.touches.length > 0) {
+      const touch = e.touches[0];
+      if (isOverCanvas(touch.clientX, touch.clientY)) {
+        game.isDragging = true;
+        game.selectedTowerType = draggedTower;
+        // Update touch position in game (for preview)
+        const rect = game.canvas.getBoundingClientRect();
+        game.touchX = touch.clientX - rect.left;
+        game.touchY = touch.clientY - rect.top;
+        console.log('[touchmove] Dragging tower:', draggedTower, 'at', touch.clientX, touch.clientY, 'canvas coords:', game.touchX, game.touchY);
+      } else {
+        game.touchX = null;
+        game.touchY = null;
+      }
+    }
+    e.preventDefault();
+  }, { passive: false });
 
   document.addEventListener('mouseup', () => {
-    if (draggedTower) {
+    if (draggedTower && !isTouch) {
       container.querySelector(`.tower-preview[data-tower="${draggedTower}"]`).classList.remove('dragging');
       draggedTower = null;
       game.isDragging = false;
       game.selectedTowerType = null;
       setBodyUserSelect('');
+      game.isTouchActive = false;
     }
   });
+  document.addEventListener('touchend', (e) => {
+    if (draggedTower && isTouch) {
+      // Place tower if released over canvas
+      if (e.changedTouches && e.changedTouches.length > 0) {
+        const touch = e.changedTouches[0];
+        console.log('[touchend] Released at', touch.clientX, touch.clientY, 'draggedTower:', draggedTower);
+        if (isOverCanvas(touch.clientX, touch.clientY)) {
+          // Synthesize a mouse-like event for placement
+          const fakeEvent = {
+            clientX: touch.clientX,
+            clientY: touch.clientY
+          };
+          console.log('[touchend] Placing tower on canvas at', fakeEvent.clientX, fakeEvent.clientY);
+          game.handleTowerPlacement(fakeEvent);
+        }
+      }
+      container.querySelector(`.tower-preview[data-tower="${draggedTower}"]`).classList.remove('dragging');
+      draggedTower = null;
+      game.isDragging = false;
+      game.selectedTowerType = null;
+      setBodyUserSelect('');
+      touchActive = false;
+      game.isTouchActive = false;
+    }
+  }, { passive: false });
+
+  // Patch Game.renderTowerPreview to use getPreviewPosition for preview location
+  const origRenderTowerPreview = game.renderTowerPreview;
+  game.renderTowerPreview = function() {
+    if (!draggedTower) return origRenderTowerPreview.call(this);
+    let pos = null;
+    if (isTouch && window.event && window.event.touches && window.event.touches.length > 0) {
+      pos = getPreviewPosition(window.event);
+    } else if (window.event) {
+      pos = getPreviewPosition(window.event);
+    }
+    if (pos) {
+      const tileSize = Math.min(this.canvas.width / this.config.map.width, this.canvas.height / this.config.map.height);
+      const tileX = Math.floor(pos.x / tileSize);
+      const tileY = Math.floor(pos.y / tileSize);
+      const isValidPlacement = !this.pathTiles.has(`${tileX},${tileY}`) && !this.towers.some(t => t.tileX === tileX && t.tileY === tileY);
+      const TowerClass = this.TOWER_CLASSES[this.selectedTowerType];
+      const previewTower = new TowerClass(tileX, tileY, this.config.map, this.canvas, this.path);
+      previewTower.renderPreview(this.ctx, tileX, tileY, isValidPlacement);
+      return;
+    }
+    origRenderTowerPreview.call(this);
+  };
+
+  // Prevent text selection on body during drag
+  function setBodyUserSelect(value) {
+    document.body.style.userSelect = value;
+    document.body.style.webkitUserSelect = value;
+    document.body.style.msUserSelect = value;
+    document.body.style.mozUserSelect = value;
+  }
 } 
