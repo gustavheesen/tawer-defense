@@ -254,13 +254,18 @@ export class Game {
         ...Array(infantry).fill(() => new InfantryEnemy(this.path, this.config.map, this.canvas))
       );
     }
-    // Spawn all enemies over 1 second
-    const total = enemiesToSpawn.length;
+    // Spawn enemies one after the other, and scale their health by wave
+    const healthMultiplier = 1 + (wave - 1) * 0.25;
     enemiesToSpawn.forEach((createEnemy, i) => {
       setTimeout(() => {
-        this.enemies.push(createEnemy());
+        const enemy = createEnemy();
+        if (enemy.maxHealth) {
+          enemy.maxHealth = Math.round(enemy.maxHealth * healthMultiplier);
+          enemy.health = enemy.maxHealth;
+        }
+        this.enemies.push(enemy);
         updateGameInfoBar(this);
-      }, Math.floor((i * 1000) / total));
+      }, i * 600); // 600ms between spawns
     });
   }
 
