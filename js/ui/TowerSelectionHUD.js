@@ -203,7 +203,7 @@ export function renderTowerSelectionHUD(game, container) {
         const rect = game.canvas.getBoundingClientRect();
         game.touchX = touch.clientX - rect.left;
         game.touchY = touch.clientY - rect.top;
-        console.log('[touchmove] Dragging tower:', draggedTower, 'at', touch.clientX, touch.clientY, 'canvas coords:', game.touchX, game.touchY);
+        //console.log('[touchmove] Dragging tower:', draggedTower, 'at', touch.clientX, touch.clientY, 'canvas coords:', game.touchX, game.touchY);
       } else {
         game.touchX = null;
         game.touchY = null;

@@ -101,23 +101,42 @@ export class Game {
         const rect = this.canvas.getBoundingClientRect();
         this.touchX = event.touches[0].clientX - rect.left;
         this.touchY = event.touches[0].clientY - rect.top;
-        console.log('[touchmove] touchX:', this.touchX, 'touchY:', this.touchY, 'canvas rect:', rect.left, rect.top, rect.width, rect.height);
+        //console.log('[touchmove] touchX:', this.touchX, 'touchY:', this.touchY, 'canvas rect:', rect.left, rect.top, rect.width, rect.height);
         this.render(); // Force re-render so preview updates
       }
     }, { passive: false });
-    // Place tower on touchend (mobile)
+    // Add touchstart listener for tower selection (separate from drag/placement)
+    this.canvas.addEventListener('touchstart', (event) => {
+      if (this.isDragging) return; // Don't select while dragging
+      // No selection logic here; selection will happen on touchend
+    }, { passive: false });
+    // Add touchend listener for tower selection/deselection
     this.canvas.addEventListener('touchend', (event) => {
-      if (this.isTouchActive && this.isDragging && this.selectedTowerType && this.touchX !== null && this.touchY !== null) {
-        // Synthesize a mouse-like event
-        const fakeEvent = {
-          clientX: this.touchX + this.canvas.getBoundingClientRect().left,
-          clientY: this.touchY + this.canvas.getBoundingClientRect().top
-        };
-        this.handleTowerPlacement(fakeEvent);
-        this.touchX = null;
-        this.touchY = null;
+      if (this.isDragging) return; // Don't select while dragging
+      if (event.changedTouches && event.changedTouches.length > 0) {
+        const rect = this.canvas.getBoundingClientRect();
+        const scaleX = this.canvas.width / rect.width;
+        const scaleY = this.canvas.height / rect.height;
+        const x = (event.changedTouches[0].clientX - rect.left) * scaleX;
+        const y = (event.changedTouches[0].clientY - rect.top) * scaleY;
+        const tileSize = Math.min(this.canvas.width / this.config.map.width, this.canvas.height / this.config.map.height);
+        const tileX = Math.floor(x / tileSize);
+        const tileY = Math.floor(y / tileSize);
+        // Check if touching a tower
+        const clickedTower = this.towers.find(t => t.tileX === tileX && t.tileY === tileY);
+        if (clickedTower) {
+          this.selectedTower = clickedTower;
+          if (this.updateUpgradeSection) this.updateUpgradeSection();
+          console.log('[Tower Selection] (touchend) Selected tower at', tileX, tileY, clickedTower);
+        } else {
+          if (this.selectedTower) {
+            console.log('[Tower Selection] (touchend) Deselected tower');
+          }
+          this.selectedTower = null;
+          if (this.updateUpgradeSection) this.updateUpgradeSection();
+        }
       }
-    });
+    }, { passive: false });
     // Add click listener for tower selection
     this.canvas.addEventListener('click', this.handleCanvasClick.bind(this));
   }
@@ -399,25 +418,54 @@ export class Game {
       // Touch: show preview one tile above finger (fix: only subtract tileSize once)
       px = this.touchX * scaleX;
       py = this.touchY * scaleY - tileSize;
-      console.log('[renderTowerPreview] touch px:', px, 'py:', py, 'tileSize:', tileSize);
+      //console.log('[renderTowerPreview] touch px:', px, 'py:', py, 'tileSize:', tileSize);
     } else {
       // Mouse: show preview under cursor
       px = this.mouseX * scaleX;
       py = this.mouseY * scaleY;
-      console.log('[renderTowerPreview] mouse px:', px, 'py:', py);
+      //console.log('[renderTowerPreview] mouse px:', px, 'py:', py);
     }
     const tileX = Math.floor(px / tileSize);
     const tileY = Math.floor(py / tileSize);
-    console.log('[renderTowerPreview] tileX:', tileX, 'tileY:', tileY, 'isTouchActive:', this.isTouchActive, 'selectedTowerType:', this.selectedTowerType);
+    //console.log('[renderTowerPreview] tileX:', tileX, 'tileY:', tileY, 'isTouchActive:', this.isTouchActive, 'selectedTowerType:', this.selectedTowerType);
 
     // Check if placement is valid
     const isValidPlacement = !this.pathTiles.has(`${tileX},${tileY}`) && 
                            !this.towers.some(t => t.tileX === tileX && t.tileY === tileY);
-    console.log('[renderTowerPreview] isValidPlacement:', isValidPlacement);
+    //console.log('[renderTowerPreview] isValidPlacement:', isValidPlacement);
 
     // Create a temporary tower for preview
     const TowerClass = this.TOWER_CLASSES[this.selectedTowerType];
     const previewTower = new TowerClass(tileX, tileY, this.config.map, this.canvas, this.path);
     previewTower.renderPreview(this.ctx, tileX, tileY, isValidPlacement);
   }
-} 
+}
+
+// Fix handleCanvasClick TypeError and prevent auto-deselection
+const origHandleCanvasClick = Game.prototype.handleCanvasClick;
+Game.prototype.handleCanvasClick = function(event) {
+  //console.log('[handleCanvasClick] Canvas click event fired', event);
+  const rect = this.canvas.getBoundingClientRect();
+  const x = event.clientX - rect.left;
+  const y = event.clientY - rect.top;
+  const tileSize = Math.min(this.canvas.width / this.config.map.width, this.canvas.height / this.config.map.height);
+  const tileX = Math.floor(x / tileSize);
+  const tileY = Math.floor(y / tileSize);
+  // Check if clicking on a tower
+  const clickedTower = this.towers.find(t => t.tileX === tileX && t.tileY === tileY);
+  if (clickedTower) {
+    this.selectedTower = clickedTower;
+    if (this.updateUpgradeSection) this.updateUpgradeSection();
+    console.log('[Tower Selection] Selected tower at', tileX, tileY, clickedTower);
+    return;
+  }
+  if (this.selectedTower) {
+    console.log('[Tower Selection] Deselected tower (handleCanvasClick)');
+  }
+  this.selectedTower = null;
+  if (this.updateUpgradeSection) this.updateUpgradeSection();
+  // Otherwise, place tower as normal
+  if (typeof origHandleCanvasClick === 'function') {
+    origHandleCanvasClick.call(this, event);
+  }
+}; 

@@ -279,6 +279,11 @@ showIntroMenu();
 // Add tower selection logic to canvas click
 const origHandleCanvasClick = Game.prototype.handleCanvasClick;
 Game.prototype.handleCanvasClick = function(event) {
+  // Only handle genuine mouse clicks (not touch or synthetic events)
+  if (event.pointerType === 'touch' || event.type === 'touchend' || event.isSynthetic) {
+    //console.log('[main.js] Skipping handleCanvasClick for touch/synthetic event', event);
+    return;
+  }
   //console.log('[handleCanvasClick] Canvas click event fired', event);
   const rect = this.canvas.getBoundingClientRect();
   const x = event.clientX - rect.left;
