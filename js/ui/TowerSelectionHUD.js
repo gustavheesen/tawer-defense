@@ -3,7 +3,7 @@
 
 
 export function renderTowerSelectionHUD(game, container) {
-  console.log('[TowerSelectionHUD] Rendering HUD for game:', game);
+  //console.log('[TowerSelectionHUD] Rendering HUD for game:', game);
   container.innerHTML = `
     <style>
       .tower-grid {

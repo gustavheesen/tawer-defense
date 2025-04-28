@@ -207,10 +207,23 @@ export class CannonTower extends Tower {
     ctx.restore();
   }
 
-  render(ctx) {
+  render(ctx, selected = false) {
     const tileSize = Math.min(this.canvas.width / this.mapConfig.width, this.canvas.height / this.mapConfig.height);
     const cx = this.tileX * tileSize + tileSize / 2;
     const cy = this.tileY * tileSize + tileSize / 2;
+    if (selected) {
+      // Soft, bright-in-the-middle glow behind the tower
+      const gradient = ctx.createRadialGradient(cx, cy, tileSize * 0.1, cx, cy, tileSize * 0.7);
+      gradient.addColorStop(0, 'rgba(255, 224, 130, 0.85)');
+      gradient.addColorStop(1, 'rgba(255, 224, 130, 0)');
+      ctx.save();
+      ctx.globalAlpha = 1.0;
+      ctx.beginPath();
+      ctx.arc(cx, cy, tileSize * 0.7, 0, 2 * Math.PI);
+      ctx.fillStyle = gradient;
+      ctx.fill();
+      ctx.restore();
+    }
     ctx.save();
     // Draw base and turret by level
     switch (this.level) {

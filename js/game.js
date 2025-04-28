@@ -90,6 +90,9 @@ export class Game {
         this.handleTowerPlacement(event);
       }
     });
+
+    // Add click listener for tower selection
+    this.canvas.addEventListener('click', this.handleCanvasClick.bind(this));
   }
 
   getTowerCost(type) {
@@ -114,18 +117,18 @@ export class Game {
 
     // Check if placement is valid
     if (this.pathTiles.has(`${tileX},${tileY}`)) {
-      console.log('Cannot place tower on path');
+      //console.log('Cannot place tower on path');
       return;
     }
     if (this.towers.some(t => t.tileX === tileX && t.tileY === tileY)) {
-      console.log('Cannot place tower on another tower');
+      //console.log('Cannot place tower on another tower');
       return;
     }
 
     // Check if player can afford the tower
     const cost = this.getTowerCost(this.selectedTowerType);
     if (this.money < cost) {
-      console.log('Not enough money');
+      //console.log('Not enough money');
       return;
     }
 
@@ -340,7 +343,7 @@ export class Game {
     
     // Render towers
     for (const tower of this.towers) {
-      tower.render(this.ctx);
+      tower.render(this.ctx, tower === this.selectedTower);
     }
     
     // Render enemies

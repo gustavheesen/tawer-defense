@@ -202,7 +202,7 @@ function startGameWithPath(mode, width, height, pathOverride) {
   const towerHudContainer = document.getElementById('tower-selection-hud');
   if (towerHudContainer) {
     renderTowerSelectionHUD(game, towerHudContainer);
-    console.log('[main.js] Rendered tower selection HUD in sidebar');
+    //console.log('[main.js] Rendered tower selection HUD in sidebar');
   }
   game.start(); 
   window.currentGame = game;
@@ -282,11 +282,29 @@ function updateSidebarHUD(game, score, lives, wave, money) {
   if (w) w.textContent = wave;
   if (m) m.textContent = money;
   if (typeof window.updateLivesUI === 'function') window.updateLivesUI(lives);
-  // Re-render the tower selection HUD to update border/fade
+  // Show/hide tower selection HUD and upgrade section
   const towerHudContainer = document.getElementById('tower-selection-hud');
-  if (towerHudContainer) {
+  const upgradeSection = document.getElementById('hud-upgrade-section');
+  if (game.selectedTower) {
+    if (towerHudContainer) towerHudContainer.style.display = 'none';
+    if (upgradeSection) upgradeSection.style.display = '';
+    // Update upgrade info
+    const towerLevelSpan = document.getElementById('hud-tower-level');
+    const upgradeCostSpan = document.getElementById('hud-upgrade-cost');
+    const upgradeBtn = document.getElementById('hud-upgrade-btn');
+    if (towerLevelSpan) towerLevelSpan.textContent = game.selectedTower.level;
+    const type = game.selectedTower.type || game.selectedTower.constructor.name.toLowerCase().replace('tower','');
+    const cost = game.getTowerCost(type) * (game.selectedTower.level);
+    if (upgradeCostSpan) upgradeCostSpan.textContent = game.selectedTower.level < 5 ? cost : 'MAX';
+    if (upgradeBtn) upgradeBtn.disabled = game.selectedTower.level >= 5 || game.money < cost;
+  } else {
+    if (towerHudContainer) towerHudContainer.style.display = '';
+    if (upgradeSection) upgradeSection.style.display = 'none';
+  }
+  // Re-render the tower selection HUD to update border/fade if visible
+  if (towerHudContainer && towerHudContainer.style.display !== 'none') {
     renderTowerSelectionHUD(game, towerHudContainer);
-    console.log('[updateSidebarHUD] Re-rendered tower selection HUD');
+    //console.log('[updateSidebarHUD] Re-rendered tower selection HUD');
   }
 }
 
@@ -302,6 +320,7 @@ showIntroMenu();
 // Add tower selection logic to canvas click
 const origHandleCanvasClick = Game.prototype.handleCanvasClick;
 Game.prototype.handleCanvasClick = function(event) {
+  //console.log('[handleCanvasClick] Canvas click event fired', event);
   const rect = this.canvas.getBoundingClientRect();
   const x = event.clientX - rect.left;
   const y = event.clientY - rect.top;
@@ -313,10 +332,16 @@ Game.prototype.handleCanvasClick = function(event) {
   if (clickedTower) {
     this.selectedTower = clickedTower;
     if (this.updateUpgradeSection) this.updateUpgradeSection();
+    console.log('[Tower Selection] Selected tower at', tileX, tileY, clickedTower);
+    if (typeof window.updateSidebarHUD === 'function') window.updateSidebarHUD(this, this.score, this.lives, this.currentWave, this.money);
     return;
+  }
+  if (this.selectedTower) {
+    console.log('[Tower Selection] Deselected tower');
   }
   this.selectedTower = null;
   if (this.updateUpgradeSection) this.updateUpgradeSection();
+  if (typeof window.updateSidebarHUD === 'function') window.updateSidebarHUD(this, this.score, this.lives, this.currentWave, this.money);
   // Otherwise, place tower as normal
   origHandleCanvasClick.call(this, event);
 };
@@ -324,18 +349,22 @@ Game.prototype.handleCanvasClick = function(event) {
 // Highlight selected tower in render
 const origRender = Game.prototype.render;
 Game.prototype.render = function() {
-  origRender.call(this);
   if (this.selectedTower) {
     const ctx = this.ctx;
     const tileSize = Math.min(this.canvas.width / this.config.map.width, this.canvas.height / this.config.map.height);
     const cx = this.selectedTower.tileX * tileSize + tileSize / 2;
     const cy = this.selectedTower.tileY * tileSize + tileSize / 2;
+    // Soft, bright-in-the-middle glow behind the tower
+    const gradient = ctx.createRadialGradient(cx, cy, tileSize * 0.1, cx, cy, tileSize * 0.7);
+    gradient.addColorStop(0, 'rgba(255, 224, 130, 0.85)'); // bright center
+    gradient.addColorStop(1, 'rgba(255, 224, 130, 0)');    // fade out
     ctx.save();
-    ctx.strokeStyle = '#ffe082';
-    ctx.lineWidth = 5;
+    ctx.globalAlpha = 1.0;
     ctx.beginPath();
-    ctx.arc(cx, cy, tileSize * 0.5, 0, 2 * Math.PI);
-    ctx.stroke();
+    ctx.arc(cx, cy, tileSize * 0.7, 0, 2 * Math.PI);
+    ctx.fillStyle = gradient;
+    ctx.fill();
     ctx.restore();
   }
+  origRender.call(this);
 }; 

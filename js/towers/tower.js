@@ -73,11 +73,24 @@ export class Tower {
     // cx, cy are in tile units
   }
 
-  render(ctx) {
+  render(ctx, selected = false) {
     // Convert tile coordinates to pixel coordinates for rendering
     const tileSize = getTileSize(this.canvas, this.mapConfig);
     const px = this.tileX * tileSize + tileSize / 2;
     const py = this.tileY * tileSize + tileSize / 2;
+    if (selected) {
+      // Soft, bright-in-the-middle glow behind the tower
+      const gradient = ctx.createRadialGradient(px, py, tileSize * 0.1, px, py, tileSize * 0.7);
+      gradient.addColorStop(0, 'rgba(255, 224, 130, 0.85)'); // bright center
+      gradient.addColorStop(1, 'rgba(255, 224, 130, 0)');    // fade out
+      ctx.save();
+      ctx.globalAlpha = 1.0;
+      ctx.beginPath();
+      ctx.arc(px, py, tileSize * 0.7, 0, 2 * Math.PI);
+      ctx.fillStyle = gradient;
+      ctx.fill();
+      ctx.restore();
+    }
     ctx.save();
     // Draw range (for debugging)
     ctx.globalAlpha = 0.1;
@@ -106,7 +119,7 @@ export class Tower {
     if (isValidPlacement) {
       // Draw transparent tower preview
       ctx.globalAlpha = 0.5;
-      this.render(ctx);
+      this.render(ctx, false);
     } else {
       // Draw no-entry sign
       ctx.globalAlpha = 0.7;
