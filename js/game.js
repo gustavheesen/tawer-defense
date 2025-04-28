@@ -29,6 +29,7 @@ import { ClusterMissileProjectile } from './projectiles/clusterMissileProjectile
 import { EMPMissileProjectile } from './projectiles/empMissileProjectile.js';
 import { updateGameInfoBar } from './ui/GameInfoBar.js';
 import { renderSidebarHUD } from './ui/SidebarHUD.js';
+import { BossEnemy } from './enemies/bossEnemy.js';
 // import { updateSidebarHUD } from './main.js';
 
 function getPathTiles(path) {
@@ -206,48 +207,52 @@ export class Game {
   startWave() {
     const wave = this.currentWave;
     let enemiesToSpawn = [];
+    // Boss every 5th wave
+    if (wave % 5 === 0) {
+      enemiesToSpawn.push(() => new BossEnemy(this.path, this.config.map, this.canvas));
+    }
     if (wave === 1) {
-      enemiesToSpawn = [
+      enemiesToSpawn.push(
         () => new TankEnemy(this.path, this.config.map, this.canvas),
         () => new TankEnemy(this.path, this.config.map, this.canvas)
-      ];
+      );
     } else if (wave === 2) {
-      enemiesToSpawn = [
+      enemiesToSpawn.push(
         () => new TankEnemy(this.path, this.config.map, this.canvas),
         () => new TankEnemy(this.path, this.config.map, this.canvas),
         () => new GhostEnemy(this.path, this.config.map, this.canvas)
-      ];
+      );
     } else if (wave === 3) {
-      enemiesToSpawn = [
+      enemiesToSpawn.push(
         () => new TankEnemy(this.path, this.config.map, this.canvas),
         () => new TankEnemy(this.path, this.config.map, this.canvas),
         () => new GhostEnemy(this.path, this.config.map, this.canvas),
         () => new GhostEnemy(this.path, this.config.map, this.canvas)
-      ];
+      );
     } else if (wave === 4) {
-      enemiesToSpawn = [
+      enemiesToSpawn.push(
         ...Array(3).fill(() => new TankEnemy(this.path, this.config.map, this.canvas)),
         ...Array(2).fill(() => new GhostEnemy(this.path, this.config.map, this.canvas)),
         () => new SpiderEnemy(this.path, this.config.map, this.canvas)
-      ];
+      );
     } else if (wave === 5) {
-      enemiesToSpawn = [
+      enemiesToSpawn.push(
         ...Array(3).fill(() => new TankEnemy(this.path, this.config.map, this.canvas)),
         ...Array(3).fill(() => new GhostEnemy(this.path, this.config.map, this.canvas)),
         ...Array(2).fill(() => new SpiderEnemy(this.path, this.config.map, this.canvas)),
         () => new InfantryEnemy(this.path, this.config.map, this.canvas)
-      ];
+      );
     } else {
       const tanks = 3 + Math.floor(wave / 2);
       const ghosts = 2 + Math.floor(wave / 2);
       const spiders = 1 + Math.floor(wave / 3);
       const infantry = Math.floor(wave / 3);
-      enemiesToSpawn = [
+      enemiesToSpawn.push(
         ...Array(tanks).fill(() => new TankEnemy(this.path, this.config.map, this.canvas)),
         ...Array(ghosts).fill(() => new GhostEnemy(this.path, this.config.map, this.canvas)),
         ...Array(spiders).fill(() => new SpiderEnemy(this.path, this.config.map, this.canvas)),
         ...Array(infantry).fill(() => new InfantryEnemy(this.path, this.config.map, this.canvas))
-      ];
+      );
     }
     // Spawn all enemies over 1 second
     const total = enemiesToSpawn.length;
