@@ -10,7 +10,7 @@ export function loadConfig() {
     // Difficulty multiplier (affects enemy health, spawn rate, etc.)
     difficulty: 1,
     // Starting money for the player
-    startingMoney: 10000,
+    startingMoney: 1000,
     // Number of lives at the start
     lives: 20,
     // Default map config (can be overridden by menu)

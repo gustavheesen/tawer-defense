@@ -66,14 +66,14 @@ export class Game {
     this.projectiles = [];
     this.score = 0;
     this.lives = this.config.lives;
-    this.money = this.config.startingMoney; // Use config value instead of hardcoded 100
+    this.money = this.config.startingMoney;
     this.running = false;
     this.lastTimestamp = 0;
     this.pathTiles = getPathTiles(this.path);
-    this.selectedTowerType = 'cannon';
+    this.selectedTowerType = null;
+    this.isDragging = false;
     this.currentWave = 1;
-    // Add event listener for placing towers
-    this.canvas.addEventListener('click', this.handleCanvasClick.bind(this));
+    this.TOWER_CLASSES = TOWER_CLASSES;
     
     // Track mouse position
     this.mouseX = 0;
@@ -82,6 +82,13 @@ export class Game {
       const rect = this.canvas.getBoundingClientRect();
       this.mouseX = event.clientX - rect.left;
       this.mouseY = event.clientY - rect.top;
+    });
+
+    // Add mouseup listener for tower placement
+    this.canvas.addEventListener('mouseup', (event) => {
+      if (this.isDragging && this.selectedTowerType) {
+        this.handleTowerPlacement(event);
+      }
     });
   }
 
@@ -95,7 +102,7 @@ export class Game {
     }
   }
 
-  handleCanvasClick(event) {
+  handleTowerPlacement(event) {
     const rect = this.canvas.getBoundingClientRect();
     const scaleX = this.canvas.width / rect.width;
     const scaleY = this.canvas.height / rect.height;
@@ -104,19 +111,31 @@ export class Game {
     const tileSize = Math.min(this.canvas.width / this.config.map.width, this.canvas.height / this.config.map.height);
     const tileX = Math.floor(x / tileSize);
     const tileY = Math.floor(y / tileSize);
-    // Log cursor and tile position
-    console.log(`Placing tower: cursor=(${x.toFixed(2)}, ${y.toFixed(2)}), tile=(${tileX}, ${tileY}), tileSize=${tileSize}`);
-    // Prevent placing on path (all tiles)
-    if (this.pathTiles.has(`${tileX},${tileY}`)) return;
-    // Prevent placing on another tower
-    if (this.towers.some(t => t.tileX === tileX && t.tileY === tileY)) return;
-    // Place tower with type
-    const TowerClass = TOWER_CLASSES[this.selectedTowerType] || CannonTower;
+
+    // Check if placement is valid
+    if (this.pathTiles.has(`${tileX},${tileY}`)) {
+      console.log('Cannot place tower on path');
+      return;
+    }
+    if (this.towers.some(t => t.tileX === tileX && t.tileY === tileY)) {
+      console.log('Cannot place tower on another tower');
+      return;
+    }
+
+    // Check if player can afford the tower
     const cost = this.getTowerCost(this.selectedTowerType);
-    if (this.money < cost) return; // Not enough money
+    if (this.money < cost) {
+      console.log('Not enough money');
+      return;
+    }
+
+    // Place the tower
     this.money -= cost;
+    const TowerClass = this.TOWER_CLASSES[this.selectedTowerType];
     this.towers.push(new TowerClass(tileX, tileY, this.config.map, this.canvas, this.path));
-    if (typeof window.updateSidebarHUD === 'function') window.updateSidebarHUD(this, this.score, this.lives, this.currentWave, this.money);
+    if (typeof window.updateSidebarHUD === 'function') {
+      window.updateSidebarHUD(this, this.score, this.lives, this.currentWave, this.money);
+    }
   }
 
   start() {
@@ -318,21 +337,25 @@ export class Game {
   render() {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.map.render(this.ctx);
-    // Render towers using their own render method
+    
+    // Render towers
     for (const tower of this.towers) {
       tower.render(this.ctx);
     }
+    
     // Render enemies
     for (const enemy of this.enemies) {
       enemy.render(this.ctx);
     }
+    
     // Render projectiles
     const tileSize = getTileSize(this.canvas, this.config.map);
     for (const proj of this.projectiles) {
       proj.render(this.ctx, tileSize, this.canvas, this.config.map);
     }
-    // Render tower preview if a tower type is selected
-    if (this.selectedTowerType) {
+    
+    // Render tower preview if dragging
+    if (this.isDragging && this.selectedTowerType) {
       this.renderTowerPreview();
     }
   }
@@ -352,7 +375,7 @@ export class Game {
                            !this.towers.some(t => t.tileX === tileX && t.tileY === tileY);
 
     // Create a temporary tower for preview
-    const TowerClass = TOWER_CLASSES[this.selectedTowerType];
+    const TowerClass = this.TOWER_CLASSES[this.selectedTowerType];
     const previewTower = new TowerClass(tileX, tileY, this.config.map, this.canvas, this.path);
     previewTower.renderPreview(this.ctx, tileX, tileY, isValidPlacement);
   }

@@ -4,6 +4,7 @@ import { SlowTower } from './towers/slowTower.js';
 import { CannonTower } from './towers/cannonTower.js';
 import { MissileSilo } from './towers/missileSilo.js';
 import { setupUI } from './ui.js';
+import { renderTowerSelectionHUD } from './ui/TowerSelectionHUD.js';
 import { generateRandomPath } from './maps/randomPath.js';
 import { loadConfig } from './config.js';
 // import { setupUI } from './ui.js';
@@ -197,6 +198,12 @@ function startGameWithPath(mode, width, height, pathOverride) {
   const game = new Game(canvas, ctx, config, path);
   setupUI(game);
   setupSidebar(game);
+  // Render the tower selection HUD in the sidebar
+  const towerHudContainer = document.getElementById('tower-selection-hud');
+  if (towerHudContainer) {
+    renderTowerSelectionHUD(game, towerHudContainer);
+    console.log('[main.js] Rendered tower selection HUD in sidebar');
+  }
   game.start(); 
   window.currentGame = game;
 }
@@ -214,11 +221,7 @@ function setupSidebar(game) {
     </div>
     <div class="hud-section">
       <div class="hud-title">Towers</div>
-      <button class="hud-btn" id="hud-tower-cannon">Cannon</button>
-      <button class="hud-btn" id="hud-tower-laser">Laser</button>
-      <button class="hud-btn" id="hud-tower-slow">Slow</button>
-      <button class="hud-btn" id="hud-tower-missile">Missile Silo</button>
-      <button class="hud-btn" id="hud-start-wave">Start Wave</button>
+      <div id="tower-selection-hud"></div>
     </div>
     <div class="hud-section" id="hud-upgrade-section" style="display:none;">
       <div class="hud-title">Selected Tower</div>
@@ -231,24 +234,7 @@ function setupSidebar(game) {
       <div class="hud-info">Fires powerful homing missiles. Upgrades increase range, fire rate, and missile type.</div>
     </div>
   `;
-  document.getElementById('hud-tower-cannon').onclick = () => {
-    game.selectedTowerType = 'cannon';
-    updateTowerSelection();
-  };
-  document.getElementById('hud-tower-laser').onclick = () => {
-    game.selectedTowerType = 'laser';
-    updateTowerSelection();
-  };
-  document.getElementById('hud-tower-slow').onclick = () => {
-    game.selectedTowerType = 'slow';
-    updateTowerSelection();
-  };
-  document.getElementById('hud-tower-missile').onclick = () => {
-    game.selectedTowerType = 'missile';
-  };
-  document.getElementById('hud-start-wave').onclick = () => {
-    game.startWave();
-  };
+  // Removed old start wave button from sidebar
   document.getElementById('hud-buy-life').onclick = () => {
     if (game.money >= 1000 && game.lives < 10) {
       game.money -= 1000;
@@ -256,13 +242,6 @@ function setupSidebar(game) {
       if (typeof window.updateSidebarHUD === 'function') window.updateSidebarHUD(game, game.score, game.lives, game.currentWave, game.money);
     }
   };
-  function updateTowerSelection() {
-    ['cannon','laser','slow'].forEach(type => {
-      document.getElementById('hud-tower-' + type).classList.remove('selected');
-    });
-    document.getElementById('hud-tower-' + game.selectedTowerType).classList.add('selected');
-  }
-  updateTowerSelection();
   // Add upgrade button logic
   const upgradeSection = document.getElementById('hud-upgrade-section');
   const upgradeBtn = document.getElementById('hud-upgrade-btn');
@@ -303,6 +282,12 @@ function updateSidebarHUD(game, score, lives, wave, money) {
   if (w) w.textContent = wave;
   if (m) m.textContent = money;
   if (typeof window.updateLivesUI === 'function') window.updateLivesUI(lives);
+  // Re-render the tower selection HUD to update border/fade
+  const towerHudContainer = document.getElementById('tower-selection-hud');
+  if (towerHudContainer) {
+    renderTowerSelectionHUD(game, towerHudContainer);
+    console.log('[updateSidebarHUD] Re-rendered tower selection HUD');
+  }
 }
 
 window.updateSidebarHUD = updateSidebarHUD;
