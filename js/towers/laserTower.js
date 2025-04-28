@@ -48,13 +48,14 @@ export class LaserTower extends Tower {
   }
 
   findTarget(enemies) {
-    // Return the first enemy in range
-    const tileSize = Math.min(this.canvas.width / this.mapConfig.width, this.canvas.height / this.mapConfig.height);
-    const cx = this.tileX * tileSize + tileSize / 2;
-    const cy = this.tileY * tileSize + tileSize / 2;
+    // Return the first enemy in range using tile-based coordinates
+    const cx = this.tileX + 0.5; // Center of tower in tile units
+    const cy = this.tileY + 0.5;
     for (const enemy of enemies) {
-      const dist = Math.sqrt((enemy.x - cx) ** 2 + (enemy.y - cy) ** 2);
-      if (dist <= this.range * tileSize) {
+      const dx = enemy.x - cx;
+      const dy = enemy.y - cy;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist <= this.range) {
         return enemy;
       }
     }
@@ -67,19 +68,15 @@ export class LaserTower extends Tower {
     const target = this.findTarget(enemies);
     if (target) {
       target.takeDamage(this.damage, 'laser');
-      const speedPixels = this.projectileSpeedTiles * tileSize;
-      const vx = Math.cos(this.turretAngle) * speedPixels;
-      const vy = Math.sin(this.turretAngle) * speedPixels;
+      // Use tile units for velocity
+      const vx = Math.cos(this.turretAngle) * this.projectileSpeedTiles;
+      const vy = Math.sin(this.turretAngle) * this.projectileSpeedTiles;
       projectiles.push(new LaserProjectile(cx, cy, vx, vy, target, this.homingStrength, tileSize));
     }
   }
 
   drawBase(ctx, cx, cy, tileSize) {
-    if (this.level === 2) return drawLaserTowerLevel2Base(ctx, cx, cy, tileSize);
-    if (this.level === 3) return drawLaserTowerLevel3Base(ctx, cx, cy, tileSize);
-    if (this.level === 4) return drawLaserTowerLevel4Base(ctx, cx, cy, tileSize);
-    if (this.level === 5) return drawLaserTowerLevel5Base(ctx, cx, cy, tileSize);
-    // Level 1 (default)
+    // Level 1 base
     ctx.save();
     ctx.translate(cx, cy);
     const baseColors = ['#b71c1c', '#1976d2', '#43a047', '#ff8f00', '#9c27b0'];
@@ -133,15 +130,11 @@ export class LaserTower extends Tower {
   }
 
   drawTurret(ctx, cx, cy, tileSize) {
-    if (this.level === 2) return drawLaserTowerLevel2Turret(ctx, cx, cy, tileSize, this.turretAngle);
-    if (this.level === 3) return drawLaserTowerLevel3Turret(ctx, cx, cy, tileSize, this.turretAngle);
-    if (this.level === 4) return drawLaserTowerLevel4Turret(ctx, cx, cy, tileSize, this.turretAngle);
-    if (this.level === 5) return drawLaserTowerLevel5Turret(ctx, cx, cy, tileSize, this.turretAngle);
-    // Level 1 (default)
+    // Level 1 turret
     ctx.save();
     ctx.translate(cx, cy);
     ctx.rotate(this.turretAngle);
-    const barrelColors = ['#ffb300', '#00e676', '#00bcd4', '#ffd600', '#fff'];
+    const barrelColors = ['#ffb300', '#00e676', '#00bcd4', '#ffd600', '#fff']; 
     const tipColors = ['#ff8f00', '#00c853', '#0097a7', '#ffea00', '#fffde7'];
     const headColors = ['#d32f2f', '#1565c0', '#388e3c', '#ffa000', '#7b1fa2'];
     const highlightColors = ['#e57373', '#64b5f6', '#81c784', '#ffe082', '#ce93d8'];
@@ -193,8 +186,29 @@ export class LaserTower extends Tower {
     const cx = this.tileX * tileSize + tileSize / 2;
     const cy = this.tileY * tileSize + tileSize / 2;
     ctx.save();
-    this.drawBase(ctx, cx, cy, tileSize);
-    this.drawTurret(ctx, cx, cy, tileSize);
+    switch (this.level) {
+      case 2:
+        drawLaserTowerLevel2Base(ctx, cx, cy, tileSize);
+        drawLaserTowerLevel2Turret(ctx, cx, cy, tileSize, this.turretAngle);
+        break;
+      case 3:
+        drawLaserTowerLevel3Base(ctx, cx, cy, tileSize);
+        drawLaserTowerLevel3Turret(ctx, cx, cy, tileSize, this.turretAngle);
+        break;
+      case 4:
+        drawLaserTowerLevel4Base(ctx, cx, cy, tileSize);
+        drawLaserTowerLevel4Turret(ctx, cx, cy, tileSize, this.turretAngle);
+        break;
+      case 5:
+        drawLaserTowerLevel5Base(ctx, cx, cy, tileSize);
+        drawLaserTowerLevel5Turret(ctx, cx, cy, tileSize, this.turretAngle);
+        break;
+      default:
+        // Level 1 (default)
+        this.drawBase(ctx, cx, cy, tileSize);
+        this.drawTurret(ctx, cx, cy, tileSize);
+        break;
+    }
     ctx.restore();
   }
 } 

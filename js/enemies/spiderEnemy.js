@@ -1,5 +1,6 @@
 import { Enemy } from './enemy.js';
 import { loadConfig } from '../config.js';
+import { getTileSize } from '../utils.js';
 
 export class SpiderEnemy extends Enemy {
   constructor(path, mapConfig, canvas) {
@@ -12,14 +13,11 @@ export class SpiderEnemy extends Enemy {
   }
 
   update(delta) {
-    // Calculate angle to next path tile before moving
+    // Calculate angle to next path tile before moving (tile-based)
     if (this.pathIndex < this.path.length - 1) {
-      const tileSize = Math.min(this.canvas.width / this.mapConfig.width, this.canvas.height / this.mapConfig.height);
       const targetTile = this.path[this.pathIndex + 1];
-      const targetX = targetTile.x * tileSize + tileSize / 2;
-      const targetY = targetTile.y * tileSize + tileSize / 2;
-      const dx = targetX - this.x;
-      const dy = targetY - this.y;
+      const dx = targetTile.x - this.x;
+      const dy = targetTile.y - this.y;
       if (dx !== 0 || dy !== 0) {
         this.angle = Math.atan2(dy, dx);
       }
@@ -29,9 +27,11 @@ export class SpiderEnemy extends Enemy {
   }
 
   render(ctx) {
-    const tileSize = Math.min(this.canvas.width / this.mapConfig.width, this.canvas.height / this.mapConfig.height);
+    const tileSize = getTileSize(this.canvas, this.mapConfig);
+    const px = this.x * tileSize + tileSize / 2;
+    const py = this.y * tileSize + tileSize / 2;
     ctx.save();
-    ctx.translate(this.x, this.y);
+    ctx.translate(px, py);
     ctx.rotate(this.angle);
     ctx.rotate(-Math.PI/2);
     // Draw legs (8, animated)
@@ -73,6 +73,14 @@ export class SpiderEnemy extends Enemy {
     ctx.arc(tileSize * 0.04, tileSize * 0.14, tileSize * 0.02, 0, 2 * Math.PI);
     ctx.fill();
     ctx.restore();
-    this.renderHealthBar(ctx, tileSize * 0.6);
+    // Health bar
+    ctx.save();
+    ctx.fillStyle = 'black';
+    ctx.fillRect(px - tileSize * 0.3, py - tileSize * 0.6 - 10, tileSize * 0.6, 6);
+    ctx.fillStyle = 'lime';
+    ctx.fillRect(px - tileSize * 0.3, py - tileSize * 0.6 - 10, tileSize * 0.6 * (this.health / this.maxHealth), 6);
+    ctx.strokeStyle = '#222';
+    ctx.strokeRect(px - tileSize * 0.3, py - tileSize * 0.6 - 10, tileSize * 0.6, 6);
+    ctx.restore();
   }
 } 

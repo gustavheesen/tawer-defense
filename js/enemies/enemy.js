@@ -10,16 +10,17 @@ export class Enemy {
     const config = loadConfig();
     this.path = path;
     this.pathIndex = 0;
-    this.speed = config.enemySpeed; // Now in tiles per second
+    this.speed = config.enemySpeed; // tiles per second
     this.maxHealth = 10 * config.difficulty;
     this.health = this.maxHealth;
     this.alive = true;
     this.mapConfig = mapConfig;
     this.canvas = canvas;
-    // Set initial position
-    const tileSize = getTileSize(canvas, mapConfig);
-    this.x = path[0].x * tileSize + tileSize / 2;
-    this.y = path[0].y * tileSize + tileSize / 2;
+    // Tile-based position
+    this.tileX = path[0].x;
+    this.tileY = path[0].y;
+    this.x = this.tileX; // float, in tile units
+    this.y = this.tileY; // float, in tile units
     this.reachedEnd = false;
   }
 
@@ -40,23 +41,26 @@ export class Enemy {
       if (this.disabled < 0) this.disabled = 0;
       return; // Skip movement and actions while disabled
     }
-    // Move along path
+    // Move along path (tile-based)
     if (this.pathIndex < this.path.length - 1) {
-      const tileSize = getTileSize(this.canvas, this.mapConfig);
       const targetTile = this.path[this.pathIndex + 1];
-      const targetX = targetTile.x * tileSize + tileSize / 2;
-      const targetY = targetTile.y * tileSize + tileSize / 2;
+      const targetX = targetTile.x;
+      const targetY = targetTile.y;
       const dx = targetX - this.x;
       const dy = targetY - this.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
-      const moveDist = this.speed * tileSize * delta; // speed (tiles/sec) * tileSize * delta
+      const moveDist = this.speed * delta; // speed (tiles/sec) * delta
       if (dist < moveDist) {
         this.x = targetX;
         this.y = targetY;
+        this.tileX = targetX;
+        this.tileY = targetY;
         this.pathIndex++;
       } else {
         this.x += (dx / dist) * moveDist;
         this.y += (dy / dist) * moveDist;
+        this.tileX = Math.round(this.x);
+        this.tileY = Math.round(this.y);
       }
     } else {
       // Reached end of path
@@ -65,18 +69,11 @@ export class Enemy {
     }
   }
 
-  renderHealthBar(ctx, size) {
-    ctx.save();
-    ctx.fillStyle = 'black';
-    ctx.fillRect(this.x - size / 2, this.y - size - 10, size, 6);
-    ctx.fillStyle = 'lime';
-    ctx.fillRect(this.x - size / 2, this.y - size - 10, size * (this.health / this.maxHealth), 6);
-    ctx.strokeStyle = '#222';
-    ctx.strokeRect(this.x - size / 2, this.y - size - 10, size, 6);
-    ctx.restore();
-  }
-
   render(ctx) {
+    // Convert tile coordinates to pixel coordinates for rendering
+    const tileSize = getTileSize(this.canvas, this.mapConfig);
+    const px = this.x * tileSize + tileSize / 2;
+    const py = this.y * tileSize + tileSize / 2;
     ctx.save();
     if (this.empStunned && this.empStunned > 0) {
       ctx.shadowColor = '#81d4fa';
@@ -84,8 +81,17 @@ export class Enemy {
     }
     ctx.fillStyle = 'red';
     ctx.beginPath();
-    ctx.arc(this.x, this.y, 12, 0, 2 * Math.PI);
+    ctx.arc(px, py, tileSize * 0.3, 0, 2 * Math.PI);
     ctx.fill();
+    ctx.restore();
+    // Health bar
+    ctx.save();
+    ctx.fillStyle = 'black';
+    ctx.fillRect(px - tileSize * 0.3, py - tileSize * 0.6 - 10, tileSize * 0.6, 6);
+    ctx.fillStyle = 'lime';
+    ctx.fillRect(px - tileSize * 0.3, py - tileSize * 0.6 - 10, tileSize * 0.6 * (this.health / this.maxHealth), 6);
+    ctx.strokeStyle = '#222';
+    ctx.strokeRect(px - tileSize * 0.3, py - tileSize * 0.6 - 10, tileSize * 0.6, 6);
     ctx.restore();
   }
 } 

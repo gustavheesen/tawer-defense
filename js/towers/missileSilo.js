@@ -41,10 +41,11 @@ export class MissileSilo extends Tower {
 
   update(delta, enemies, projectiles) {
     this.cooldown -= delta;
-    const tileSize = this.canvas.width / this.mapConfig.width;
-    const cx = this.tileX * tileSize + tileSize / 2;
-    const cy = this.tileY * tileSize + tileSize / 2;
-    const rangePixels = this.range * tileSize;
+    // Use tile units for all calculations
+    const cx = this.tileX + 0.5; // Center of tower in tile units
+    const cy = this.tileY + 0.5;
+    const rangeTiles = this.range;
+
     let nearest = null;
     let nearestDist = Infinity;
     let targetAngle = this.turretAngle;
@@ -52,17 +53,20 @@ export class MissileSilo extends Tower {
       const dx = enemy.x - cx;
       const dy = enemy.y - cy;
       const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < rangePixels && dist < nearestDist) {
+      if (dist < rangeTiles && dist < nearestDist) {
         nearest = enemy;
         nearestDist = dist;
         targetAngle = Math.atan2(dy, dx);
       }
     }
+
+    // If no enemy in range, aim at path start point
     if (!nearest && this.path && this.path[0]) {
-      const startX = this.path[0].x * tileSize + tileSize / 2;
-      const startY = this.path[0].y * tileSize + tileSize / 2;
+      const startX = this.path[0].x + 0.5;
+      const startY = this.path[0].y + 0.5;
       targetAngle = Math.atan2(startY - cy, startX - cx);
     }
+
     // Rotate turret toward target
     let diff = ((a, b) => { let d = a - b; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; return d; })(targetAngle, this.turretAngle);
     const maxTurn = Math.PI * delta;
@@ -71,8 +75,9 @@ export class MissileSilo extends Tower {
     } else {
       this.turretAngle += Math.sign(diff) * maxTurn;
     }
+
     if (nearest && this.cooldown <= 0 && Math.abs(diff) < 0.087) {
-      this.fireProjectile(cx, cy, projectiles, tileSize, enemies);
+      this.fireProjectile(cx, cy, projectiles, null, enemies);
       this.cooldown = 1 / this.fireRate;
     }
   }
@@ -90,7 +95,8 @@ export class MissileSilo extends Tower {
       }
     }
     if (!bestEnemy) return;
-    const missileSpeed = tileSize * 2.5;
+    // Use tile units for velocity
+    const missileSpeed = 2.5; // tiles per second
     const angle = Math.atan2(bestEnemy.y - cy, bestEnemy.x - cx);
     const vx = Math.cos(angle) * missileSpeed;
     const vy = Math.sin(angle) * missileSpeed;

@@ -2,6 +2,7 @@ import { GuidedMissileProjectile } from './guidedMissileProjectile.js';
 
 export class ClusterMissileProjectile {
   constructor(x, y, vx, vy, damage, target, tileSize = 32) {
+    // x, y, vx, vy are in tile units
     this.x = x;
     this.y = y;
     this.vx = vx;
@@ -9,11 +10,11 @@ export class ClusterMissileProjectile {
     this.damage = damage;
     this.target = target;
     this.tileSize = tileSize;
-    this.radius = tileSize * 0.18;
+    this.radius = 0.18; // in tile units
     this.speed = Math.sqrt(vx * vx + vy * vy);
     this.alive = true;
     this.exploded = false;
-    this.explosionRadius = tileSize * 0.75;
+    this.explosionRadius = 0.75; // in tile units
     this.explosionDuration = 14;
     this.explosionFrame = 0;
     this.trail = [];
@@ -46,7 +47,7 @@ export class ClusterMissileProjectile {
       const dx = this.target.x - this.x;
       const dy = this.target.y - this.y;
       const dist = Math.hypot(dx, dy);
-      if (dist > 2) {
+      if (dist > 0.2) { // 0.2 tiles minimum distance
         const desiredAngle = Math.atan2(dy, dx);
         let angleDiff = desiredAngle - Math.atan2(this.vy, this.vx);
         while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
@@ -68,7 +69,7 @@ export class ClusterMissileProjectile {
       if (!enemy.alive) continue;
       const dx = enemy.x - this.x;
       const dy = enemy.y - this.y;
-      if (Math.hypot(dx, dy) < this.radius + (enemy.radius || this.tileSize * 0.15)) {
+      if (Math.hypot(dx, dy) < this.radius + 0.15) { // 0.15 tiles is enemy radius
         this.explode(enemies, projectiles);
         break;
       }
@@ -101,17 +102,24 @@ export class ClusterMissileProjectile {
     }
   }
 
-  render(ctx, tileSize) {
+  render(ctx, tileSize, canvas, mapConfig) {
+    // Convert tile coordinates to pixel coordinates for rendering
+    if (!tileSize && canvas && mapConfig) {
+      tileSize = Math.min(canvas.width / mapConfig.width, canvas.height / mapConfig.height);
+    }
+    // Default fallback
     tileSize = tileSize || this.tileSize;
+    const px = this.x * tileSize;
+    const py = this.y * tileSize;
     if (this.exploded) {
       ctx.save();
       ctx.globalAlpha = 0.7 * (1 - this.explosionFrame / this.explosionDuration);
       ctx.beginPath();
-      ctx.arc(this.x, this.y, this.explosionRadius * (this.explosionFrame / this.explosionDuration), 0, 2 * Math.PI);
+      ctx.arc(px, py, this.explosionRadius * tileSize * (this.explosionFrame / this.explosionDuration), 0, 2 * Math.PI);
       ctx.fillStyle = '#c8e6c9';
       ctx.fill();
       ctx.beginPath();
-      ctx.arc(this.x, this.y, this.explosionRadius * 0.5 * (this.explosionFrame / this.explosionDuration), 0, 2 * Math.PI);
+      ctx.arc(px, py, this.explosionRadius * 0.5 * tileSize * (this.explosionFrame / this.explosionDuration), 0, 2 * Math.PI);
       ctx.fillStyle = '#43a047';
       ctx.fill();
       ctx.restore();
@@ -119,7 +127,7 @@ export class ClusterMissileProjectile {
     }
     // Missile body (green tip)
     ctx.save();
-    ctx.translate(this.x, this.y);
+    ctx.translate(px, py);
     ctx.rotate(Math.atan2(this.vy, this.vx));
     ctx.fillStyle = '#bdbdbd';
     ctx.strokeStyle = '#222';
@@ -141,7 +149,7 @@ export class ClusterMissileProjectile {
       ctx.save();
       ctx.globalAlpha = t.alpha * 0.3;
       ctx.beginPath();
-      ctx.arc(t.x, t.y, tileSize * 0.10, 0, 2 * Math.PI);
+      ctx.arc(t.x * tileSize, t.y * tileSize, tileSize * 0.10, 0, 2 * Math.PI);
       ctx.fillStyle = '#c8e6c9';
       ctx.fill();
       ctx.restore();

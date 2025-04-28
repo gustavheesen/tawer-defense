@@ -66,7 +66,7 @@ export class Game {
     this.projectiles = [];
     this.score = 0;
     this.lives = this.config.lives;
-    this.money = 100; // Start money
+    this.money = this.config.startingMoney; // Use config value instead of hardcoded 100
     this.running = false;
     this.lastTimestamp = 0;
     this.pathTiles = getPathTiles(this.path);
@@ -74,6 +74,15 @@ export class Game {
     this.currentWave = 1;
     // Add event listener for placing towers
     this.canvas.addEventListener('click', this.handleCanvasClick.bind(this));
+    
+    // Track mouse position
+    this.mouseX = 0;
+    this.mouseY = 0;
+    this.canvas.addEventListener('mousemove', (event) => {
+      const rect = this.canvas.getBoundingClientRect();
+      this.mouseX = event.clientX - rect.left;
+      this.mouseY = event.clientY - rect.top;
+    });
   }
 
   getTowerCost(type) {
@@ -88,17 +97,19 @@ export class Game {
 
   handleCanvasClick(event) {
     const rect = this.canvas.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
+    const scaleX = this.canvas.width / rect.width;
+    const scaleY = this.canvas.height / rect.height;
+    const x = (event.clientX - rect.left) * scaleX;
+    const y = (event.clientY - rect.top) * scaleY;
     const tileSize = Math.min(this.canvas.width / this.config.map.width, this.canvas.height / this.config.map.height);
     const tileX = Math.floor(x / tileSize);
     const tileY = Math.floor(y / tileSize);
+    // Log cursor and tile position
+    console.log(`Placing tower: cursor=(${x.toFixed(2)}, ${y.toFixed(2)}), tile=(${tileX}, ${tileY}), tileSize=${tileSize}`);
     // Prevent placing on path (all tiles)
     if (this.pathTiles.has(`${tileX},${tileY}`)) return;
     // Prevent placing on another tower
     if (this.towers.some(t => t.tileX === tileX && t.tileY === tileY)) return;
-    
-    
     // Place tower with type
     const TowerClass = TOWER_CLASSES[this.selectedTowerType] || CannonTower;
     const cost = this.getTowerCost(this.selectedTowerType);
@@ -307,7 +318,6 @@ export class Game {
   render() {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.map.render(this.ctx);
-    const tileSize = getTileSize(this.canvas, this.config.map);
     // Render towers using their own render method
     for (const tower of this.towers) {
       tower.render(this.ctx);
@@ -317,9 +327,33 @@ export class Game {
       enemy.render(this.ctx);
     }
     // Render projectiles
+    const tileSize = getTileSize(this.canvas, this.config.map);
     for (const proj of this.projectiles) {
-      proj.render(this.ctx, tileSize);
+      proj.render(this.ctx, tileSize, this.canvas, this.config.map);
     }
-    // TODO: Render UI overlays, etc.
+    // Render tower preview if a tower type is selected
+    if (this.selectedTowerType) {
+      this.renderTowerPreview();
+    }
+  }
+
+  renderTowerPreview() {
+    const rect = this.canvas.getBoundingClientRect();
+    const scaleX = this.canvas.width / rect.width;
+    const scaleY = this.canvas.height / rect.height;
+    const mouseX = this.mouseX * scaleX;
+    const mouseY = this.mouseY * scaleY;
+    const tileSize = Math.min(this.canvas.width / this.config.map.width, this.canvas.height / this.config.map.height);
+    const tileX = Math.floor(mouseX / tileSize);
+    const tileY = Math.floor(mouseY / tileSize);
+
+    // Check if placement is valid
+    const isValidPlacement = !this.pathTiles.has(`${tileX},${tileY}`) && 
+                           !this.towers.some(t => t.tileX === tileX && t.tileY === tileY);
+
+    // Create a temporary tower for preview
+    const TowerClass = TOWER_CLASSES[this.selectedTowerType];
+    const previewTower = new TowerClass(tileX, tileY, this.config.map, this.canvas, this.path);
+    previewTower.renderPreview(this.ctx, tileX, tileY, isValidPlacement);
   }
 } 

@@ -1,5 +1,6 @@
 import { Enemy } from './enemy.js';
 import { loadConfig } from '../config.js';
+import { getTileSize } from '../utils.js';
 
 export class SpeedBurstEnemy extends Enemy {
   constructor(path, mapConfig, canvas) {
@@ -32,9 +33,11 @@ export class SpeedBurstEnemy extends Enemy {
   }
 
   render(ctx) {
-    const tileSize = Math.min(this.canvas.width / this.mapConfig.width, this.canvas.height / this.mapConfig.height);
+    const tileSize = getTileSize(this.canvas, this.mapConfig);
+    const px = this.x * tileSize + tileSize / 2;
+    const py = this.y * tileSize + tileSize / 2;
     ctx.save();
-    ctx.translate(this.x, this.y);
+    ctx.translate(px, py);
     // Afterimage effect
     if (this.burstTime > 0) {
       ctx.globalAlpha = 0.3;
@@ -52,6 +55,14 @@ export class SpeedBurstEnemy extends Enemy {
     ctx.arc(0, 0, tileSize * 0.13, 0, 2 * Math.PI);
     ctx.fill();
     ctx.restore();
-    this.renderHealthBar(ctx, tileSize * 0.28);
+    // Health bar
+    ctx.save();
+    ctx.fillStyle = 'black';
+    ctx.fillRect(px - tileSize * 0.14, py - tileSize * 0.28 - 10, tileSize * 0.28, 6);
+    ctx.fillStyle = 'lime';
+    ctx.fillRect(px - tileSize * 0.14, py - tileSize * 0.28 - 10, tileSize * 0.28 * (this.health / this.maxHealth), 6);
+    ctx.strokeStyle = '#222';
+    ctx.strokeRect(px - tileSize * 0.14, py - tileSize * 0.28 - 10, tileSize * 0.28, 6);
+    ctx.restore();
   }
 } 

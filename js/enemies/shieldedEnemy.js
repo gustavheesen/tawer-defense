@@ -1,5 +1,6 @@
 import { Enemy } from './enemy.js';
 import { loadConfig } from '../config.js';
+import { getTileSize } from '../utils.js';
 
 export class ShieldedEnemy extends Enemy {
   constructor(path, mapConfig, canvas) {
@@ -24,9 +25,11 @@ export class ShieldedEnemy extends Enemy {
   }
 
   render(ctx) {
-    const tileSize = Math.min(this.canvas.width / this.mapConfig.width, this.canvas.height / this.mapConfig.height);
+    const tileSize = getTileSize(this.canvas, this.mapConfig);
+    const px = this.x * tileSize + tileSize / 2;
+    const py = this.y * tileSize + tileSize / 2;
     ctx.save();
-    ctx.translate(this.x, this.y);
+    ctx.translate(px, py);
     // Body
     ctx.fillStyle = '#4a90e2';
     ctx.beginPath();
@@ -43,6 +46,14 @@ export class ShieldedEnemy extends Enemy {
       ctx.globalAlpha = 1.0;
     }
     ctx.restore();
-    this.renderHealthBar(ctx, tileSize * 0.38);
+    // Health bar
+    ctx.save();
+    ctx.fillStyle = 'black';
+    ctx.fillRect(px - tileSize * 0.19, py - tileSize * 0.38 - 10, tileSize * 0.38, 6);
+    ctx.fillStyle = 'lime';
+    ctx.fillRect(px - tileSize * 0.19, py - tileSize * 0.38 - 10, tileSize * 0.38 * (this.health / this.maxHealth), 6);
+    ctx.strokeStyle = '#222';
+    ctx.strokeRect(px - tileSize * 0.19, py - tileSize * 0.38 - 10, tileSize * 0.38, 6);
+    ctx.restore();
   }
 } 

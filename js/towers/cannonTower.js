@@ -48,10 +48,10 @@ export class CannonTower extends Tower {
 
   update(delta, enemies, projectiles) {
     this.cooldown -= delta;
-    const tileSize = this.canvas.width / this.mapConfig.width;
-    const cx = this.tileX * tileSize + tileSize / 2;
-    const cy = this.tileY * tileSize + tileSize / 2;
-    const rangePixels = this.range * tileSize;
+    // Use tile units for all calculations
+    const cx = this.tileX + 0.5;
+    const cy = this.tileY + 0.5;
+    const rangeTiles = this.range;
 
     let nearest = null;
     let nearestDist = Infinity;
@@ -60,7 +60,7 @@ export class CannonTower extends Tower {
       const dx = enemy.x - cx;
       const dy = enemy.y - cy;
       const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < rangePixels && dist < nearestDist) {
+      if (dist < rangeTiles && dist < nearestDist) {
         nearest = enemy;
         nearestDist = dist;
         targetAngle = Math.atan2(dy, dx);
@@ -69,8 +69,8 @@ export class CannonTower extends Tower {
 
     // If no enemy in range, aim at path start point
     if (!nearest && this.path && this.path[0]) {
-      const startX = this.path[0].x * tileSize + tileSize / 2;
-      const startY = this.path[0].y * tileSize + tileSize / 2;
+      const startX = this.path[0].x + 0.5;
+      const startY = this.path[0].y + 0.5;
       targetAngle = Math.atan2(startY - cy, startX - cx);
     }
 
@@ -85,17 +85,16 @@ export class CannonTower extends Tower {
 
     // Only fire if aimed within 5 degrees
     if (nearest && this.cooldown <= 0 && Math.abs(angleDiff(targetAngle, this.turretAngle)) < 0.087) {
-      this.fireProjectile(cx, cy, projectiles, tileSize, enemies);
+      this.fireProjectile(cx, cy, projectiles);
       this.cooldown = 1 / this.fireRate;
     }
   }
 
-  fireProjectile(cx, cy, projectiles, tileSize, enemies = []) {
-    // Only fire normal cannon shell
-    const speedPixels = this.projectileSpeedTiles * tileSize;
-    const vx = Math.cos(this.turretAngle) * speedPixels;
-    const vy = Math.sin(this.turretAngle) * speedPixels;
-    projectiles.push(new CannonProjectile(cx, cy, vx, vy, tileSize));
+  fireProjectile(cx, cy, projectiles) {
+    // Use tile units for velocity
+    const vx = Math.cos(this.turretAngle) * this.projectileSpeedTiles;
+    const vy = Math.sin(this.turretAngle) * this.projectileSpeedTiles;
+    projectiles.push(new CannonProjectile(cx, cy, vx, vy));
   }
 
   drawBase(ctx, cx, cy, tileSize) {
@@ -213,8 +212,29 @@ export class CannonTower extends Tower {
     const cx = this.tileX * tileSize + tileSize / 2;
     const cy = this.tileY * tileSize + tileSize / 2;
     ctx.save();
-    this.drawBase(ctx, cx, cy, tileSize);
-    this.drawTurret(ctx, cx, cy, tileSize);
+    // Draw base and turret by level
+    switch (this.level) {
+      case 2:
+        drawCannonTowerLevel2Base(ctx, cx, cy, tileSize);
+        drawCannonTowerLevel2Turret(ctx, cx, cy, tileSize, this.turretAngle);
+        break;
+      case 3:
+        drawCannonTowerLevel3Base(ctx, cx, cy, tileSize);
+        drawCannonTowerLevel3Turret(ctx, cx, cy, tileSize, this.turretAngle);
+        break;
+      case 4:
+        drawCannonTowerLevel4Base(ctx, cx, cy, tileSize);
+        drawCannonTowerLevel4Turret(ctx, cx, cy, tileSize, this.turretAngle);
+        break;
+      case 5:
+        drawCannonTowerLevel5Base(ctx, cx, cy, tileSize);
+        drawCannonTowerLevel5Turret(ctx, cx, cy, tileSize, this.turretAngle);
+        break;
+      default:
+        this.drawBase(ctx, cx, cy, tileSize);
+        this.drawTurret(ctx, cx, cy, tileSize);
+        break;
+    }
     ctx.restore();
   }
 } 

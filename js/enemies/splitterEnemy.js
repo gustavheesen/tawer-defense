@@ -1,5 +1,6 @@
 import { Enemy } from './enemy.js';
 import { loadConfig } from '../config.js';
+import { getTileSize } from '../utils.js';
 
 export class SplitterEnemy extends Enemy {
   constructor(path, mapConfig, canvas) {
@@ -17,9 +18,11 @@ export class SplitterEnemy extends Enemy {
   }
 
   render(ctx) {
-    const tileSize = Math.min(this.canvas.width / this.mapConfig.width, this.canvas.height / this.mapConfig.height);
+    const tileSize = getTileSize(this.canvas, this.mapConfig);
+    const px = this.x * tileSize + tileSize / 2;
+    const py = this.y * tileSize + tileSize / 2;
     ctx.save();
-    ctx.translate(this.x, this.y);
+    ctx.translate(px, py);
     // Body
     ctx.fillStyle = '#3cb371';
     ctx.beginPath();
@@ -34,7 +37,15 @@ export class SplitterEnemy extends Enemy {
     ctx.lineTo(tileSize * 0.09, tileSize * 0.13);
     ctx.stroke();
     ctx.restore();
-    this.renderHealthBar(ctx, tileSize * 0.38);
+    // Health bar
+    ctx.save();
+    ctx.fillStyle = 'black';
+    ctx.fillRect(px - tileSize * 0.19, py - tileSize * 0.38 - 10, tileSize * 0.38, 6);
+    ctx.fillStyle = 'lime';
+    ctx.fillRect(px - tileSize * 0.19, py - tileSize * 0.38 - 10, tileSize * 0.38 * (this.health / this.maxHealth), 6);
+    ctx.strokeStyle = '#222';
+    ctx.strokeRect(px - tileSize * 0.19, py - tileSize * 0.38 - 10, tileSize * 0.38, 6);
+    ctx.restore();
   }
 }
 
@@ -52,9 +63,11 @@ export class MiniSplitterEnemy extends Enemy {
   }
 
   render(ctx) {
-    const tileSize = Math.min(this.canvas.width / this.mapConfig.width, this.canvas.height / this.mapConfig.height);
+    const tileSize = getTileSize(this.canvas, this.mapConfig);
+    const px = this.x * tileSize + tileSize / 2;
+    const py = this.y * tileSize + tileSize / 2;
     ctx.save();
-    ctx.translate(this.x, this.y);
+    ctx.translate(px, py);
     // Body
     ctx.fillStyle = '#7ee081';
     ctx.beginPath();
@@ -69,6 +82,14 @@ export class MiniSplitterEnemy extends Enemy {
     ctx.lineTo(tileSize * 0.05, tileSize * 0.07);
     ctx.stroke();
     ctx.restore();
-    this.renderHealthBar(ctx, tileSize * 0.22);
+    // Health bar
+    ctx.save();
+    ctx.fillStyle = 'black';
+    ctx.fillRect(px - tileSize * 0.11, py - tileSize * 0.22 - 10, tileSize * 0.22, 6);
+    ctx.fillStyle = 'lime';
+    ctx.fillRect(px - tileSize * 0.11, py - tileSize * 0.22 - 10, tileSize * 0.22 * (this.health / this.maxHealth), 6);
+    ctx.strokeStyle = '#222';
+    ctx.strokeRect(px - tileSize * 0.11, py - tileSize * 0.22 - 10, tileSize * 0.22, 6);
+    ctx.restore();
   }
 } 

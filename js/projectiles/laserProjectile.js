@@ -3,8 +3,6 @@ import { Projectile } from './projectile.js';
 export class LaserProjectile extends Projectile {
   constructor(x, y, vx, vy, target = null, homingStrength = 0, tileSize = 32) {
     super(x, y, vx, vy);
-    this.length = tileSize * 0.45;
-    this.thickness = tileSize * 0.1;
     this.target = target;
     this.homingStrength = homingStrength;
     this.tileSize = tileSize;
@@ -31,14 +29,21 @@ export class LaserProjectile extends Projectile {
     this.y += this.vy * delta;
   }
 
-  render(ctx, tileSize) {
+  render(ctx, tileSize, canvas, mapConfig) {
+    // Convert tile coordinates to pixel coordinates for rendering
+    if (!tileSize && canvas && mapConfig) {
+      tileSize = Math.min(canvas.width / mapConfig.width, canvas.height / mapConfig.height);
+    }
+    // Default fallback
     tileSize = tileSize || this.tileSize;
+    const px = this.x * tileSize;
+    const py = this.y * tileSize;
     // Draw a magenta line in the direction of travel
     const angle = Math.atan2(this.vy, this.vx);
     const length = tileSize * 0.45;
     const thickness = tileSize * 0.1;
     ctx.save();
-    ctx.translate(this.x, this.y);
+    ctx.translate(px, py);
     ctx.rotate(angle);
     ctx.strokeStyle = 'magenta';
     ctx.lineWidth = thickness;
@@ -50,7 +55,7 @@ export class LaserProjectile extends Projectile {
   }
 
   getHitRadius() {
-    return this.tileSize * 0.1;
+    return 0.2; // 0.2 tiles
   }
 
   applyEffect(enemy) {

@@ -33,6 +33,7 @@ export class SlowTower extends Tower {
     ];
     const s = stats[Math.max(0, Math.min(level-1, 4))];
     this.range = s.range;
+    this.rangeTiles = s.range;
     this.fireRate = s.fireRate;
     this.slowEffect = s.slow;
   }
@@ -49,9 +50,12 @@ export class SlowTower extends Tower {
   }
 
   fireProjectile(cx, cy, projectiles, tileSize) {
-    const speedPixels = this.projectileSpeedTiles * tileSize;
-    const vx = Math.cos(this.turretAngle) * speedPixels;
-    const vy = Math.sin(this.turretAngle) * speedPixels;
+    if (!tileSize) {
+      tileSize = Math.min(this.canvas.width / this.mapConfig.width, this.canvas.height / this.mapConfig.height);
+    }
+    const speedTiles = this.projectileSpeedTiles;
+    const vx = Math.cos(this.turretAngle) * speedTiles;
+    const vy = Math.sin(this.turretAngle) * speedTiles;
     projectiles.push(new SlowProjectile(cx, cy, vx, vy, tileSize));
   }
 

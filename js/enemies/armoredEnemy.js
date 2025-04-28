@@ -1,5 +1,6 @@
 import { Enemy } from './enemy.js';
 import { loadConfig } from '../config.js';
+import { getTileSize } from '../utils.js';
 
 export class ArmoredEnemy extends Enemy {
   constructor(path, mapConfig, canvas) {
@@ -20,9 +21,11 @@ export class ArmoredEnemy extends Enemy {
   }
 
   render(ctx) {
-    const tileSize = Math.min(this.canvas.width / this.mapConfig.width, this.canvas.height / this.mapConfig.height);
+    const tileSize = getTileSize(this.canvas, this.mapConfig);
+    const px = this.x * tileSize + tileSize / 2;
+    const py = this.y * tileSize + tileSize / 2;
     ctx.save();
-    ctx.translate(this.x, this.y);
+    ctx.translate(px, py);
     // Body
     ctx.fillStyle = '#888';
     ctx.beginPath();
@@ -37,6 +40,14 @@ export class ArmoredEnemy extends Enemy {
       ctx.stroke();
     }
     ctx.restore();
-    this.renderHealthBar(ctx, tileSize * 0.40);
+    // Health bar
+    ctx.save();
+    ctx.fillStyle = 'black';
+    ctx.fillRect(px - tileSize * 0.20, py - tileSize * 0.40 - 10, tileSize * 0.40, 6);
+    ctx.fillStyle = 'lime';
+    ctx.fillRect(px - tileSize * 0.20, py - tileSize * 0.40 - 10, tileSize * 0.40 * (this.health / this.maxHealth), 6);
+    ctx.strokeStyle = '#222';
+    ctx.strokeRect(px - tileSize * 0.20, py - tileSize * 0.40 - 10, tileSize * 0.40, 6);
+    ctx.restore();
   }
 } 

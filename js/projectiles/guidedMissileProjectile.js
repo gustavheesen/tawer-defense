@@ -1,7 +1,8 @@
-                                                  import { Enemy } from '../enemies/enemy.js';
+import { Enemy } from '../enemies/enemy.js';
 
 export class GuidedMissileProjectile {
   constructor(x, y, vx, vy, damage, target, small = false, tileSize = 32) {
+    // x, y, vx, vy are in tile units
     this.x = x;
     this.y = y;
     this.vx = vx;
@@ -10,11 +11,11 @@ export class GuidedMissileProjectile {
     this.target = target;
     this.small = small;
     this.tileSize = tileSize;
-    this.radius = small ? tileSize * 0.13 : tileSize * 0.23;
+    this.radius = small ? 0.13 : 0.23; // in tile units
     this.speed = Math.sqrt(vx * vx + vy * vy);
     this.alive = true;
     this.exploded = false;
-    this.explosionRadius = small ? tileSize * 0.45 : tileSize * 0.9;
+    this.explosionRadius = small ? 0.45 : 0.9; // in tile units
     this.explosionDuration = 12;
     this.explosionFrame = 0;
     this.trail = [];
@@ -51,7 +52,7 @@ export class GuidedMissileProjectile {
       const dx = this.target.x - this.x;
       const dy = this.target.y - this.y;
       const dist = Math.hypot(dx, dy);
-      if (dist > 2) {
+      if (dist > 0.2) { // 0.2 tiles minimum distance
         const desiredAngle = Math.atan2(dy, dx);
         let angleDiff = desiredAngle - Math.atan2(this.vy, this.vx);
         while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
@@ -74,7 +75,7 @@ export class GuidedMissileProjectile {
       if (!enemy.alive) continue;
       const dx = enemy.x - this.x;
       const dy = enemy.y - this.y;
-      if (Math.hypot(dx, dy) < this.radius + (enemy.radius || this.tileSize * 0.15)) {
+      if (Math.hypot(dx, dy) < this.radius + 0.15) { // 0.15 tiles is enemy radius
         this.explode(enemies);
         break;
       }
@@ -96,17 +97,24 @@ export class GuidedMissileProjectile {
     }
   }
 
-  render(ctx, tileSize) {
+  render(ctx, tileSize, canvas, mapConfig) {
+    // Convert tile coordinates to pixel coordinates for rendering
+    if (!tileSize && canvas && mapConfig) {
+      tileSize = Math.min(canvas.width / mapConfig.width, canvas.height / mapConfig.height);
+    }
+    // Default fallback
     tileSize = tileSize || this.tileSize;
+    const px = this.x * tileSize;
+    const py = this.y * tileSize;
     if (this.exploded) {
       ctx.save();
       ctx.globalAlpha = 0.7 * (1 - this.explosionFrame / this.explosionDuration);
       ctx.beginPath();
-      ctx.arc(this.x, this.y, this.explosionRadius * (this.explosionFrame / this.explosionDuration), 0, 2 * Math.PI);
+      ctx.arc(px, py, this.explosionRadius * tileSize * (this.explosionFrame / this.explosionDuration), 0, 2 * Math.PI);
       ctx.fillStyle = this.small ? '#b3e5fc' : '#ffecb3';
       ctx.fill();
       ctx.beginPath();
-      ctx.arc(this.x, this.y, (this.explosionRadius * 0.5) * (this.explosionFrame / this.explosionDuration), 0, 2 * Math.PI);
+      ctx.arc(px, py, (this.explosionRadius * 0.5) * tileSize * (this.explosionFrame / this.explosionDuration), 0, 2 * Math.PI);
       ctx.fillStyle = this.small ? '#0288d1' : '#ff9800';
       ctx.fill();
       ctx.restore();
@@ -114,7 +122,7 @@ export class GuidedMissileProjectile {
     }
     // Missile body
     ctx.save();
-    ctx.translate(this.x, this.y);
+    ctx.translate(px, py);
     ctx.rotate(Math.atan2(this.vy, this.vx));
     ctx.fillStyle = this.small ? '#b3e5fc' : '#bdbdbd';
     ctx.strokeStyle = '#222';
@@ -146,7 +154,7 @@ export class GuidedMissileProjectile {
       ctx.save();
       ctx.globalAlpha = t.alpha * 0.3;
       ctx.beginPath();
-      ctx.arc(t.x, t.y, this.small ? tileSize * 0.07 : tileSize * 0.14, 0, 2 * Math.PI);
+      ctx.arc(t.x * tileSize, t.y * tileSize, this.small ? tileSize * 0.07 : tileSize * 0.14, 0, 2 * Math.PI);
       ctx.fillStyle = this.small ? '#b3e5fc' : '#90caf9';
       ctx.fill();
       ctx.restore();
