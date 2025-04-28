@@ -14,6 +14,7 @@ export function renderTowerSelectionHUD(game, container) {
         background: rgba(0, 0, 0, 0.5);
         border-radius: 8px;
         margin: 10px 0;
+        user-select: none;
       }
       .tower-preview {
         width: 60px;
@@ -29,6 +30,10 @@ export function renderTowerSelectionHUD(game, container) {
         transition: transform 0.2s, border 0.2s, opacity 0.2s;
         border: 2px solid #ff5252 !important; /* Default: red border */
         opacity: 1;
+        user-select: none;
+      }
+      .tower-preview * {
+        user-select: none;
       }
       .tower-preview.affordable {
         border: 2px solid #2196f3 !important; /* Blue border */
@@ -113,6 +118,14 @@ export function renderTowerSelectionHUD(game, container) {
   let draggedTower = null;
   let dragOffset = { x: 0, y: 0 };
 
+  // Prevent text selection on body during drag
+  function setBodyUserSelect(value) {
+    document.body.style.userSelect = value;
+    document.body.style.webkitUserSelect = value;
+    document.body.style.msUserSelect = value;
+    document.body.style.mozUserSelect = value;
+  }
+
   container.querySelectorAll('.tower-preview').forEach(preview => {
     preview.addEventListener('mousedown', (e) => {
       const type = preview.dataset.tower;
@@ -129,6 +142,8 @@ export function renderTowerSelectionHUD(game, container) {
         x: e.clientX - preview.getBoundingClientRect().left,
         y: e.clientY - preview.getBoundingClientRect().top
       };
+      setBodyUserSelect('none');
+      e.preventDefault();
     });
   });
 
@@ -144,6 +159,7 @@ export function renderTowerSelectionHUD(game, container) {
       draggedTower = null;
       game.isDragging = false;
       game.selectedTowerType = null;
+      setBodyUserSelect('');
     }
   });
 } 

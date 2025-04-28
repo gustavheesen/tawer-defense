@@ -2,6 +2,48 @@
 import { renderTowerSelectionHUD } from './ui/TowerSelectionHUD.js';
 
 export function setupUI(game) {
+  // Inject global CSS to prevent text selection and improve sidebar responsiveness
+  if (!document.getElementById('global-ui-style')) {
+    const style = document.createElement('style');
+    style.id = 'global-ui-style';
+    style.innerHTML = `
+      /* Prevent text selection everywhere */
+      body, #ui-container, #ui-bar, #modal-overlay, .tower-grid, .tower-preview, .tower-preview *, .tower-cost, .hud, .sidebar, .sidebar * {
+        user-select: none !important;
+        -webkit-user-select: none !important;
+        -ms-user-select: none !important;
+        -moz-user-select: none !important;
+      }
+      /* Responsive sidebar for mobile landscape */
+      #ui-bar {
+        box-sizing: border-box;
+        max-width: 100vw;
+        width: 100%;
+        min-width: 0;
+        padding: 8px 4px;
+        font-size: 1em;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: space-between;
+        align-items: center;
+      }
+      @media (max-width: 700px) and (orientation: landscape) {
+        #ui-bar {
+          font-size: 0.9em;
+          padding: 4px 2px;
+          gap: 4px;
+          min-width: 0;
+          max-width: 100vw;
+        }
+        #ui-container {
+          width: 100vw;
+          min-width: 0;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
   // Remove debug CSS: do not inject any forced styles
   const ui = document.getElementById('ui-container');
   //console.log('[setupUI] Called with game:', game);
