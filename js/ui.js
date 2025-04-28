@@ -1,5 +1,6 @@
 //console.log('[ui.js] File loaded/refreshed');
 import { renderTowerSelectionHUD } from './ui/TowerSelectionHUD.js';
+import { renderGameInfoBar } from './ui/GameInfoBar.js';
 
 export function setupUI(game) {
   // Inject global CSS to prevent text selection and improve sidebar responsiveness
@@ -14,43 +15,124 @@ export function setupUI(game) {
         -ms-user-select: none !important;
         -moz-user-select: none !important;
       }
-      /* Responsive sidebar for mobile landscape */
-      #ui-bar {
+      /* Layout: top bar, sidebar, canvas */
+      body {
+        margin: 0;
+        padding: 0;
         box-sizing: border-box;
-        max-width: 100vw;
-        width: 100%;
-        min-width: 0;
-        padding: 8px 4px;
-        font-size: 1em;
+        background: #232526;
+      }
+      #game-info-bar-container {
+        width: 100vw;
+        z-index: 1000;
+        position: fixed;
+        top: 0;
+        left: 0;
+      }
+      #main-layout {
         display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        justify-content: space-between;
+        flex-direction: row;
+        width: 100vw;
+        min-height: 100vh;
+        box-sizing: border-box;
+        padding-top: 56px; /* Height of top bar */
+      }
+      #sidebar {
+        width: 150px;
+        min-width: 150px;
+        max-width: 150px;
+        background: rgba(30,32,36,0.98);
+        box-shadow: 2px 0 16px #0004;
+        z-index: 10;
+        padding: 8px 4px;
+        box-sizing: border-box;
+        position: sticky;
+        top: 56px;
+        height: calc(100vh - 56px);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
         align-items: center;
       }
-      @media (max-width: 700px) and (orientation: landscape) {
-        #ui-bar {
-          font-size: 0.9em;
-          padding: 4px 2px;
-          gap: 4px;
-          min-width: 0;
-          max-width: 100vw;
+      .tower-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        align-items: center;
+        padding: 12px 0;
+        flex-wrap: wrap;
+        max-height: 100%;
+        overflow: hidden;
+      }
+      .tower-preview {
+        width: 48px !important;
+        height: 48px !important;
+        margin: 0 0 12px 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        background: rgba(255,255,255,0.08);
+        box-sizing: border-box;
+        flex-shrink: 1;
+      }
+      .tower-preview canvas {
+        width: 36px !important;
+        height: 36px !important;
+        display: block;
+      }
+      .tower-cost {
+        font-size: 0.8em;
+        color: #fff;
+        margin-top: 4px;
+        text-align: center;
+      }
+
+      @media (max-width: 700px) {
+        #main-layout {
+          flex-direction: column;
+          padding-top: 48px;
         }
-        #ui-container {
-          width: 100vw;
-          min-width: 0;
+        #sidebar {
+          width: 100px;
+          min-width: 100px;
+          max-width: 100px;
+        }
+        #game-canvas {
+          max-width: 100vw;
+          max-height: calc(100vh - 48px);
+        }
+        .tower-preview {
+          width: 32px !important;
+          height: 32px !important;
+        }
+        .tower-preview canvas {
+          width: 24px !important;
+          height: 24px !important;
+        }
+        .tower-grid {
+          gap: 10px;
+          padding: 8px 0;
         }
       }
     `;
     document.head.appendChild(style);
   }
+
+  // Create or get the game info bar container
+  let infoBarContainer = document.getElementById('game-info-bar-container');
+  if (!infoBarContainer) {
+    infoBarContainer = document.createElement('div');
+    infoBarContainer.id = 'game-info-bar-container';
+    document.body.prepend(infoBarContainer);
+  }
+  renderGameInfoBar(game, infoBarContainer);
+
   // Remove debug CSS: do not inject any forced styles
   const ui = document.getElementById('ui-container');
   //console.log('[setupUI] Called with game:', game);
   ui.innerHTML = `
     <div id="ui-bar">
-      <span>Score: <span id="score">0</span></span>
-      <span>Lives: <span id="lives">${game.lives}</span></span>
       <button id="start-wave">Start Wave</button>
     </div>
   `;

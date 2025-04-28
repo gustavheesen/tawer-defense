@@ -27,6 +27,7 @@ import { EMPEnemy } from './enemies/empEnemy.js';
 import { MissileSilo } from './towers/missileSilo.js';
 import { ClusterMissileProjectile } from './projectiles/clusterMissileProjectile.js';
 import { EMPMissileProjectile } from './projectiles/empMissileProjectile.js';
+import { updateGameInfoBar } from './ui/GameInfoBar.js';
 // import { updateSidebarHUD } from './main.js';
 
 function getPathTiles(path) {
@@ -136,9 +137,7 @@ export class Game {
     this.money -= cost;
     const TowerClass = this.TOWER_CLASSES[this.selectedTowerType];
     this.towers.push(new TowerClass(tileX, tileY, this.config.map, this.canvas, this.path));
-    if (typeof window.updateSidebarHUD === 'function') {
-      window.updateSidebarHUD(this, this.score, this.lives, this.currentWave, this.money);
-    }
+    updateGameInfoBar(this);
   }
 
   start() {
@@ -228,7 +227,7 @@ export class Game {
         this.enemies.push(new EMPEnemy(this.path, this.config.map, this.canvas));
       }, delay); delay += 1500;
     }
-    if (typeof window.updateSidebarHUD === 'function') window.updateSidebarHUD(this, this.score, this.lives, this.currentWave, this.money);
+    updateGameInfoBar(this);
   }
 
   loop(timestamp) {
@@ -304,11 +303,9 @@ export class Game {
     const reachedEnd = reachedEndEnemies.length;
     if (killed > 0) {
       this.money += killed * 10; // +10 per kill
-      if (typeof window.updateSidebarHUD === 'function') window.updateSidebarHUD(this, this.score, this.lives, this.currentWave, this.money);
     }
     if (reachedEnd > 0) {
       this.lives -= reachedEnd;
-      if (typeof window.updateSidebarHUD === 'function') window.updateSidebarHUD(this, this.score, this.lives, this.currentWave, this.money);
       if (this.lives <= 0) {
         this.running = false;
         if (typeof window.showGameOverScreen === 'function') window.showGameOverScreen();
@@ -317,7 +314,6 @@ export class Game {
     // If all enemies are gone and no more are spawning, start next wave
     if (this.enemies.length === 0 && this.running) {
       this.currentWave++;
-      if (typeof window.updateSidebarHUD === 'function') window.updateSidebarHUD(this, this.score, this.lives, this.currentWave, this.money);
       this.startWave();
     }
     // Add new enemies (from splitting)
@@ -334,7 +330,7 @@ export class Game {
     }
     // Remove dead projectiles
     this.projectiles = this.projectiles.filter(p => p.alive);
-    // if (typeof window.updateSidebarHUD === 'function') window.updateSidebarHUD(this, this.score, this.lives, this.currentWave);
+    updateGameInfoBar(this);
   }
 
   render() {

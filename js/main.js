@@ -7,6 +7,7 @@ import { setupUI } from './ui.js';
 import { renderTowerSelectionHUD } from './ui/TowerSelectionHUD.js';
 import { generateRandomPath } from './maps/randomPath.js';
 import { loadConfig } from './config.js';
+import { renderSidebarHUD } from './ui/SidebarHUD.js';
 // import { setupUI } from './ui.js';
 
 const canvas = document.getElementById('game-canvas');
@@ -33,54 +34,114 @@ function showIntroMenu() {
 
 function renderMenu() {
   modal.style.display = 'flex';
+  modal.style.position = 'fixed';
+  modal.style.top = '0';
+  modal.style.left = '0';
+  modal.style.width = '100vw';
+  modal.style.height = '100vh';
+  modal.style.alignItems = 'center';
+  modal.style.justifyContent = 'center';
+  modal.style.overflow = 'hidden';
+  modal.style.background = 'rgba(30,32,36,0.92)';
   modal.innerHTML = `
-    <div id="intro-menu" style="background:linear-gradient(135deg,#232526 0%,#414345 100%); color:#fff; padding: 40px 56px; border-radius: 22px; box-shadow: 0 8px 48px #000b; text-align: center; min-width: 340px; border: 3px solid #4fc3f7; position:relative;">
-      <div style="margin-bottom: 24px;">
-        <span style="font-family: 'Trebuchet MS', Impact, sans-serif; font-size: 2.7em; letter-spacing: 2px; color: #4fc3f7; text-shadow: 0 2px 12px #000a, 0 0 0 #fff; font-weight: bold; display: inline-block;">
-          <span style='color:#fff; text-shadow: 0 2px 12px #4fc3f7;'>TOWER</span> <span style='color:#4fc3f7;'>DEFENSE</span>
-        </span>
-        <div style="font-size:1.1em; color:#b3e5fc; margin-top: 6px; letter-spacing:1px;">Build. Defend. Survive.</div>
+    <div id="intro-menu" style="display: flex; flex-direction: row; align-items: stretch; justify-content: center; background:linear-gradient(135deg,#232526 0%,#414345 100%); color:#fff; border-radius: 2vw; box-shadow: 0 8px 48px #000b; min-width: 0; max-width: 80vw; max-height: 80vh; width: 80vw; height: 80vh; box-sizing: border-box; border: 0.4vw solid #4fc3f7; position:relative; overflow: hidden;">
+      <div id="menu-map-col" style="flex: 1 1 0; display: flex; align-items: center; justify-content: center; background: none; min-width: 0; padding: 2vw 1vw;">
+        <canvas id="map-preview" width="320" height="160" style="background:#222; border-radius:1vw; box-shadow:0 2px 12px #0006; max-width: 32vw; max-height: 60vh; width: 32vw; height: auto;"></canvas>
       </div>
-      <div id="preview-area" style="margin: 0 auto 18px auto; display: flex; flex-direction: column; align-items: center;">
-        <canvas id="map-preview" width="320" height="240" style="background:#222; border-radius:12px; box-shadow:0 2px 12px #0006; margin-bottom: 10px;"></canvas>
-        <div>
-          <button class="menu-btn" id="randomize-btn">Randomize</button>
-          <button class="menu-btn" id="start-game-btn">Start Game</button>
+      <div id="menu-controls-col" style="flex: 1 1 0; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 0; padding: 2vw 2vw; gap: 2vw;">
+        <div style="margin-bottom: 1vw;">
+          <span style="font-family: 'Trebuchet MS', Impact, sans-serif; font-size: 2.8vw; letter-spacing: 0.2vw; color: #4fc3f7; text-shadow: 0 2px 12px #000a, 0 0 0 #fff; font-weight: bold; display: inline-block;">
+            <span style='color:#fff; text-shadow: 0 2px 12px #4fc3f7;'>TOWER</span> <span style='color:#4fc3f7;'>DEFENSE</span>
+          </span>
+          <div style="font-size:1.2vw; color:#b3e5fc; margin-top: 0.5vw; letter-spacing:0.1vw;">Build. Defend. Survive.</div>
         </div>
-      </div>
-      <div id="grid-size-select" style="margin-top: 28px;">
-        <label style="font-size:1.1em; color:#b3e5fc;">Grid Size: </label>
-        <input id="grid-width" type="number" min="6" max="32" value="${previewWidth}" style="width: 60px; font-size:1.1em; border-radius:6px; border:1px solid #4fc3f7; padding:2px 6px;"> x
-        <input id="grid-height" type="number" min="6" max="32" value="${previewHeight}" style="width: 60px; font-size:1.1em; border-radius:6px; border:1px solid #4fc3f7; padding:2px 6px;">
-        <button class="menu-btn" id="resize-btn" style="margin-left: 16px;">Resize</button>
+        <button class="menu-btn" id="randomize-btn">Randomize</button>
+        <button class="menu-btn" id="start-game-btn">Start Game</button>
+        <div id="grid-size-select" style="margin-top: 1vw; display: flex; flex-direction: column; align-items: center; gap: 0.7vw;">
+          <label style="font-size:1vw; color:#b3e5fc;">Grid Size: </label>
+          <div style="display: flex; gap: 0.7vw; align-items: center;">
+            <input id="grid-width" type="number" min="6" max="32" value="${previewWidth}" style="width: 4vw; font-size:1vw; border-radius:0.5vw; border:1px solid #4fc3f7; padding:0.3vw 0.7vw;"> x
+            <input id="grid-height" type="number" min="6" max="32" value="${previewHeight}" style="width: 4vw; font-size:1vw; border-radius:0.5vw; border:1px solid #4fc3f7; padding:0.3vw 0.7vw;">
+          </div>
+          <button class="menu-btn" id="resize-btn" style="margin-top: 0.7vw;">Resize</button>
+        </div>
       </div>
     </div>
     <style>
       .menu-btn {
         background: linear-gradient(90deg,#4fc3f7 0%,#1976d2 100%);
         color: #fff;
-        font-size: 1.25em;
+        font-size: 1.2vw;
         font-family: 'Trebuchet MS', Impact, sans-serif;
         font-weight: bold;
         border: none;
-        border-radius: 10px;
-        padding: 14px 36px;
-        margin: 12px 18px 0 18px;
+        border-radius: 0.7vw;
+        padding: 0.8vw 2vw;
+        margin: 0.5vw 0 0 0;
         box-shadow: 0 2px 12px #0006;
         cursor: pointer;
         transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
         outline: none;
-        letter-spacing: 1px;
+        letter-spacing: 0.1vw;
+        width: 100%;
+        max-width: 220px;
+        min-width: 80px;
       }
       .menu-btn:hover, .menu-btn:focus {
         background: linear-gradient(90deg,#1976d2 0%,#4fc3f7 100%);
         color: #fff;
-        transform: translateY(-2px) scale(1.04);
+        transform: translateY(-0.1vw) scale(1.03);
         box-shadow: 0 6px 24px #1976d2cc;
       }
       #intro-menu input[type=number]:focus {
-        border: 2px solid #1976d2;
+        border: 0.3vw solid #1976d2;
         outline: none;
+      }
+      @media (max-width: 900px) {
+        #intro-menu {
+          flex-direction: column;
+          max-width: 98vw;
+          max-height: 98vh;
+          width: 98vw;
+          height: auto;
+          padding: 2vw 1vw;
+        }
+        #menu-map-col {
+          padding: 2vw 0.5vw;
+        }
+        #menu-controls-col {
+          padding: 2vw 1vw;
+        }
+        .menu-btn {
+          font-size: 2.5vw;
+          padding: 1vw 2vw;
+        }
+      }
+      @media (max-width: 700px) {
+        #intro-menu {
+          flex-direction: column;
+          max-width: 100vw;
+          max-height: 100vh;
+          width: 100vw;
+          height: auto;
+          padding: 1vw 0.5vw;
+        }
+        #menu-map-col {
+          padding: 1vw 0.2vw;
+        }
+        #menu-controls-col {
+          padding: 1vw 0.5vw;
+        }
+        .menu-btn {
+          font-size: 3vw;
+          padding: 1vw 2vw;
+        }
+        #map-preview {
+          max-width: 98vw;
+          max-height: 18vh;
+          width: 98vw;
+          height: auto;
+        }
       }
     </style>
   `;
@@ -197,7 +258,7 @@ function startGameWithPath(mode, width, height, pathOverride) {
   const config = { ...loadConfig(), map: { width, height } };
   const game = new Game(canvas, ctx, config, path);
   setupUI(game);
-  setupSidebar(game);
+  renderSidebarHUD(game, document.getElementById('sidebar'));
   // Render the tower selection HUD in the sidebar
   const towerHudContainer = document.getElementById('tower-selection-hud');
   if (towerHudContainer) {
@@ -207,108 +268,6 @@ function startGameWithPath(mode, width, height, pathOverride) {
   game.start(); 
   window.currentGame = game;
 }
-
-function setupSidebar(game) {
-  const sidebar = document.getElementById('sidebar');
-  sidebar.innerHTML = `
-    <div class="hud-section">
-      <div class="hud-title">Game Info</div>
-      <div class="hud-info">Score: <span id="hud-score">0</span></div>
-      <div class="hud-info">Lives: <span id="hud-lives">${game.lives}</span></div>
-      <div class="hud-info">Wave: <span id="hud-wave">1</span></div>
-      <div class="hud-info">Money: <span id="hud-money">${game.money}</span></div>
-      <button class="hud-btn" id="hud-buy-life">Buy Life ($1000)</button>
-    </div>
-    <div class="hud-section">
-      <div class="hud-title">Towers</div>
-      <div id="tower-selection-hud"></div>
-    </div>
-    <div class="hud-section" id="hud-upgrade-section" style="display:none;">
-      <div class="hud-title">Selected Tower</div>
-      <div class="hud-info">Level: <span id="hud-tower-level"></span></div>
-      <div class="hud-info">Upgrade Cost: <span id="hud-upgrade-cost"></span></div>
-      <button class="hud-btn" id="hud-upgrade-btn">Upgrade</button>
-    </div>
-    <div class="hud-section">
-      <div class="hud-title">Missile Silo</div>
-      <div class="hud-info">Fires powerful homing missiles. Upgrades increase range, fire rate, and missile type.</div>
-    </div>
-  `;
-  // Removed old start wave button from sidebar
-  document.getElementById('hud-buy-life').onclick = () => {
-    if (game.money >= 1000 && game.lives < 10) {
-      game.money -= 1000;
-      game.lives += 1;
-      if (typeof window.updateSidebarHUD === 'function') window.updateSidebarHUD(game, game.score, game.lives, game.currentWave, game.money);
-    }
-  };
-  // Add upgrade button logic
-  const upgradeSection = document.getElementById('hud-upgrade-section');
-  const upgradeBtn = document.getElementById('hud-upgrade-btn');
-  const towerLevelSpan = document.getElementById('hud-tower-level');
-  const upgradeCostSpan = document.getElementById('hud-upgrade-cost');
-  upgradeBtn.onclick = () => {
-    if (game.selectedTower && game.selectedTower.level < 5) {
-      const cost = game.getTowerCost(game.selectedTower.type || game.selectedTower.constructor.name.toLowerCase().replace('tower','')) * (game.selectedTower.level);
-      if (game.money >= cost) {
-        game.money -= cost;
-        game.selectedTower.upgrade();
-        updateUpgradeSection();
-        if (typeof window.updateSidebarHUD === 'function') window.updateSidebarHUD(game, game.score, game.lives, game.currentWave, game.money);
-      }
-    }
-  };
-  function updateUpgradeSection() {
-    if (game.selectedTower) {
-      upgradeSection.style.display = '';
-      towerLevelSpan.textContent = game.selectedTower.level;
-      const cost = game.getTowerCost(game.selectedTower.type || game.selectedTower.constructor.name.toLowerCase().replace('tower','')) * (game.selectedTower.level);
-      upgradeCostSpan.textContent = game.selectedTower.level < 5 ? cost : 'MAX';
-      upgradeBtn.disabled = game.selectedTower.level >= 5 || game.money < cost;
-    } else {
-      upgradeSection.style.display = 'none';
-    }
-  }
-  game.updateUpgradeSection = updateUpgradeSection;
-}
-
-function updateSidebarHUD(game, score, lives, wave, money) {
-  const s = document.getElementById('hud-score');
-  const l = document.getElementById('hud-lives');
-  const w = document.getElementById('hud-wave');
-  const m = document.getElementById('hud-money');
-  if (s) s.textContent = score;
-  if (l) l.textContent = `❤️ x${typeof lives === 'number' ? lives : 0}`;
-  if (w) w.textContent = wave;
-  if (m) m.textContent = money;
-  if (typeof window.updateLivesUI === 'function') window.updateLivesUI(lives);
-  // Show/hide tower selection HUD and upgrade section
-  const towerHudContainer = document.getElementById('tower-selection-hud');
-  const upgradeSection = document.getElementById('hud-upgrade-section');
-  if (game.selectedTower) {
-    if (towerHudContainer) towerHudContainer.style.display = 'none';
-    if (upgradeSection) upgradeSection.style.display = '';
-    // Update upgrade info
-    const towerLevelSpan = document.getElementById('hud-tower-level');
-    const upgradeCostSpan = document.getElementById('hud-upgrade-cost');
-    const upgradeBtn = document.getElementById('hud-upgrade-btn');
-    if (towerLevelSpan) towerLevelSpan.textContent = game.selectedTower.level;
-    const type = game.selectedTower.type || game.selectedTower.constructor.name.toLowerCase().replace('tower','');
-    const cost = game.getTowerCost(type) * (game.selectedTower.level);
-    if (upgradeCostSpan) upgradeCostSpan.textContent = game.selectedTower.level < 5 ? cost : 'MAX';
-    if (upgradeBtn) upgradeBtn.disabled = game.selectedTower.level >= 5 || game.money < cost;
-  } else {
-    if (towerHudContainer) towerHudContainer.style.display = '';
-    if (upgradeSection) upgradeSection.style.display = 'none';
-  }
-  // Re-render the tower selection HUD to update border/fade if visible
-  if (towerHudContainer && towerHudContainer.style.display !== 'none') {
-    renderTowerSelectionHUD(game, towerHudContainer);
-    //console.log('[updateSidebarHUD] Re-rendered tower selection HUD');
-  }
-}
-
-window.updateSidebarHUD = updateSidebarHUD;
 
 // Also update canvas size on window resize
 window.addEventListener('resize', () => {
