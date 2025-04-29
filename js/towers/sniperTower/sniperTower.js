@@ -34,21 +34,26 @@ function predictEnemyPosition(enemy, towerX, towerY, projectileSpeed) {
   const b = 2 * (dx * vx + dy * vy);
   const c = dx * dx + dy * dy;
   let t = 0;
+  let valid = true;
   if (Math.abs(a) < 1e-6) {
     t = c / Math.max(Math.sqrt(vx * vx + vy * vy), 1e-6);
   } else {
     const disc = b * b - 4 * a * c;
     if (disc < 0) {
       t = 0;
+      valid = false;
     } else {
       const t1 = (-b + Math.sqrt(disc)) / (2 * a);
       const t2 = (-b - Math.sqrt(disc)) / (2 * a);
-      t = Math.max(t1, t2, 0);
+      t = Math.min(t1, t2) > 0 ? Math.min(t1, t2) : Math.max(t1, t2, 0);
+      if (t <= 0) valid = false;
     }
   }
   return {
     x: enemy.x + vx * t,
     y: enemy.y + vy * t,
+    valid,
+    t
   };
 }
 
@@ -105,9 +110,13 @@ export class SniperTower extends Tower {
         nearestDist = dist;
       }
     }
+    let canFire = false;
     if (nearest) {
       predicted = predictEnemyPosition(nearest, cx, cy, this.projectileSpeedTiles);
-      targetAngle = Math.atan2(predicted.y - cy, predicted.x - cx);
+      if (predicted.valid) {
+        targetAngle = Math.atan2(predicted.y - cy, predicted.x - cx);
+        canFire = true;
+      }
     }
     // If no enemy in range, aim at path start point
     if (!nearest && this.pathStart) {
@@ -123,8 +132,8 @@ export class SniperTower extends Tower {
     } else {
       this.turretAngle += Math.sign(diff) * maxTurn;
     }
-    // Only fire if aimed within 5 degrees
-    if (nearest && this.cooldown <= 0 && Math.abs(angleDiff(targetAngle, this.turretAngle)) < 0.087) {
+    // Only fire if perfectly aimed and prediction is valid
+    if (canFire && this.cooldown <= 0 && Math.abs(angleDiff(targetAngle, this.turretAngle)) < 0.01) {
       this.fireProjectile(cx, cy, projectiles, nearest);
       this.cooldown = 1 / this.fireRate;
     }
