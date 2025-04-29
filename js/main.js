@@ -4,6 +4,7 @@ import { SlowTower } from './towers/slowTower.js';
 import { CannonTower } from './towers/cannonTower.js';
 import { MissileSilo } from './towers/missileSilo.js';
 import { SniperTower } from './towers/sniperTower/sniperTower.js';
+import { TrapTowerLevel1 } from './towers/trapTower/trapTowerLevel1.js';
 import { setupUI } from './ui.js';
 import { renderTowerSelectionHUD } from './ui/TowerSelectionHUD.js';
 import { generateRandomPath } from './maps/randomPath.js';
@@ -26,6 +27,7 @@ window.SlowTower = SlowTower;
 window.CannonTower = CannonTower;
 window.MissileSilo = MissileSilo;
 window.SniperTower = SniperTower;
+window.TrapTowerLevel1 = TrapTowerLevel1;
 
 // Register tower classes for selection UI
 const TOWER_CLASSES = {
@@ -34,6 +36,7 @@ const TOWER_CLASSES = {
   slow: SlowTower,
   missile: MissileSilo,
   sniper: SniperTower,
+  trap: TrapTowerLevel1,
 };
 
 function showIntroMenu() {

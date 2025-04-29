@@ -31,6 +31,7 @@ import { updateGameInfoBar } from './ui/GameInfoBar.js';
 import { renderSidebarHUD } from './ui/SidebarHUD.js';
 import { BossEnemy } from './enemies/bossEnemy.js';
 import { SniperTower } from './towers/sniperTower/sniperTower.js';
+import { TrapTowerLevel1 } from './towers/trapTower/trapTowerLevel1.js';
 // import { updateSidebarHUD } from './main.js';
 
 function getPathTiles(path) {
@@ -57,6 +58,7 @@ const TOWER_CLASSES = {
   slow: SlowTower,
   missile: MissileSilo,
   sniper: SniperTower,
+  trap: TrapTowerLevel1,
 };
 
 export class Game {
@@ -160,6 +162,7 @@ export class Game {
       case 'slow': return 60;
       case 'missile': return 120;
       case 'sniper': return 200;
+      case 'trap': return 60;
       default: return 50;
     }
   }
@@ -289,7 +292,17 @@ export class Game {
         if (tower.disabled < 0) tower.disabled = 0;
         continue; // skip update if disabled
       }
-      tower.update(delta, this.enemies, this.projectiles);
+      if (tower.type === 'trap') {
+        // Convert path (array of nodes) to all path tiles (array of {x, y})
+        const pathTilesArr = Array.from(new Set(this.path.map(pt => `${pt.x},${pt.y}`)))
+          .map(key => {
+            const [x, y] = key.split(',').map(Number);
+            return { x, y };
+          });
+        tower.update(delta, this.enemies, this.projectiles, pathTilesArr);
+      } else {
+        tower.update(delta, this.enemies, this.projectiles);
+      }
     }
     // Update enemies
     for (const enemy of this.enemies) {
