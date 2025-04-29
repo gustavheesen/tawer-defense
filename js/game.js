@@ -30,6 +30,7 @@ import { EMPMissileProjectile } from './projectiles/empMissileProjectile.js';
 import { updateGameInfoBar } from './ui/GameInfoBar.js';
 import { renderSidebarHUD } from './ui/SidebarHUD.js';
 import { BossEnemy } from './enemies/bossEnemy.js';
+import { SniperTower } from './towers/sniperTower/sniperTower.js';
 // import { updateSidebarHUD } from './main.js';
 
 function getPathTiles(path) {
@@ -54,7 +55,8 @@ const TOWER_CLASSES = {
   cannon: CannonTower,
   laser: LaserTower,
   slow: SlowTower,
-  missile: MissileSilo
+  missile: MissileSilo,
+  sniper: SniperTower,
 };
 
 export class Game {
@@ -157,6 +159,7 @@ export class Game {
       case 'laser': return 80;
       case 'slow': return 60;
       case 'missile': return 120;
+      case 'sniper': return 200;
       default: return 50;
     }
   }

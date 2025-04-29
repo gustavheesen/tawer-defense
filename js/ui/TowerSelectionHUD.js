@@ -77,11 +77,15 @@ export function renderTowerSelectionHUD(game, container) {
         <canvas id="missile-preview"></canvas>
         <div class="tower-cost">$${game.getTowerCost('missile')}</div>
       </div>
+      <div class="tower-preview" data-tower="sniper">
+        <canvas id="sniper-preview"></canvas>
+        <div class="tower-cost">$${game.getTowerCost('sniper')}</div>
+      </div>
     </div>
   `;
 
   // Use each tower's renderPreview method for the HUD preview
-  const previewTypes = ['cannon', 'laser', 'slow', 'missile'];
+  const previewTypes = ['cannon', 'laser', 'slow', 'missile', 'sniper'];
   previewTypes.forEach(type => {
     const canvas = document.getElementById(`${type}-preview`);
     const previewDiv = canvas.parentElement;

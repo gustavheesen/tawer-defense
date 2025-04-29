@@ -3,6 +3,7 @@ import { LaserTower } from './towers/laserTower.js';
 import { SlowTower } from './towers/slowTower.js';
 import { CannonTower } from './towers/cannonTower.js';
 import { MissileSilo } from './towers/missileSilo.js';
+import { SniperTower } from './towers/sniperTower/sniperTower.js';
 import { setupUI } from './ui.js';
 import { renderTowerSelectionHUD } from './ui/TowerSelectionHUD.js';
 import { generateRandomPath } from './maps/randomPath.js';
@@ -24,6 +25,16 @@ window.LaserTower = LaserTower;
 window.SlowTower = SlowTower;
 window.CannonTower = CannonTower;
 window.MissileSilo = MissileSilo;
+window.SniperTower = SniperTower;
+
+// Register tower classes for selection UI
+const TOWER_CLASSES = {
+  cannon: CannonTower,
+  laser: LaserTower,
+  slow: SlowTower,
+  missile: MissileSilo,
+  sniper: SniperTower,
+};
 
 function showIntroMenu() {
   previewWidth = lastGridWidth;
@@ -339,4 +350,7 @@ Game.prototype.render = function() {
     ctx.restore();
   }
   origRender.call(this);
-}; 
+};
+
+// Patch Game to use TOWER_CLASSES
+Game.prototype.TOWER_CLASSES = TOWER_CLASSES; 
