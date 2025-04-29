@@ -10,6 +10,48 @@ function angleDiff(a, b) {
   return d;
 }
 
+function getEnemyVelocity(enemy) {
+  // Estimate velocity based on next path tile
+  if (!enemy.path || enemy.pathIndex >= enemy.path.length - 1) return { vx: 0, vy: 0 };
+  const nextTile = enemy.path[enemy.pathIndex + 1];
+  const dx = nextTile.x - enemy.x;
+  const dy = nextTile.y - enemy.y;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  if (dist === 0) return { vx: 0, vy: 0 };
+  const speed = enemy.speed || 0;
+  return {
+    vx: (dx / dist) * speed,
+    vy: (dy / dist) * speed,
+  };
+}
+
+function predictEnemyPosition(enemy, towerX, towerY, projectileSpeed) {
+  const { vx, vy } = getEnemyVelocity(enemy);
+  const dx = enemy.x - towerX;
+  const dy = enemy.y - towerY;
+  // Quadratic solution for intercept time
+  const a = vx * vx + vy * vy - projectileSpeed * projectileSpeed;
+  const b = 2 * (dx * vx + dy * vy);
+  const c = dx * dx + dy * dy;
+  let t = 0;
+  if (Math.abs(a) < 1e-6) {
+    t = c / Math.max(Math.sqrt(vx * vx + vy * vy), 1e-6);
+  } else {
+    const disc = b * b - 4 * a * c;
+    if (disc < 0) {
+      t = 0;
+    } else {
+      const t1 = (-b + Math.sqrt(disc)) / (2 * a);
+      const t2 = (-b - Math.sqrt(disc)) / (2 * a);
+      t = Math.max(t1, t2, 0);
+    }
+  }
+  return {
+    x: enemy.x + vx * t,
+    y: enemy.y + vy * t,
+  };
+}
+
 export class SniperTower extends Tower {
   constructor(tileX, tileY, mapConfig, canvas, path) {
     super(tileX, tileY, mapConfig, canvas, path);
@@ -22,17 +64,20 @@ export class SniperTower extends Tower {
 
   setStatsForLevel(level) {
     const stats = [
-      { range: 9.5, fireRate: 0.33, damage: 100 }, // Level 1
-      { range: 11, fireRate: 0.37, damage: 150 }, // Level 2
-      { range: 12.5, fireRate: 0.42, damage: 200 }, // Level 3
-      { range: 14, fireRate: 0.5, damage: 250 }, // Level 4
-      { range: 15.5, fireRate: 0.59, damage: 350 }  // Level 5
+      { range: 9.5, fireRate: 0.33, damage: 200, homing: 0.08, speed: 1.5 }, // Level 1
+      { range: 11, fireRate: 0.37, damage: 300, homing: 0.10, speed: 1.7 }, // Level 2
+      { range: 12.5, fireRate: 0.42, damage: 400, homing: 0.12, speed: 2.0 }, // Level 3
+      { range: 14, fireRate: 0.5, damage: 500, homing: 0.14, speed: 2.3 }, // Level 4
+      { range: 15.5, fireRate: 0.59, damage: 650, homing: 0.16, speed: 2.7 }  // Level 5
     ];
     const s = stats[Math.max(0, Math.min(level-1, 4))];
     this.range = s.range;
     this.rangeTiles = s.range;
     this.fireRate = s.fireRate;
     this.damage = s.damage;
+    this.homingStrength = s.homing;
+    const config = loadConfig();
+    this.projectileSpeedTiles = config.baseProjectileSpeed * s.speed;
   }
 
   upgrade() {
@@ -50,6 +95,7 @@ export class SniperTower extends Tower {
     let nearest = null;
     let nearestDist = Infinity;
     let targetAngle = this.turretAngle;
+    let predicted = null;
     for (const enemy of enemies) {
       const dx = enemy.x - cx;
       const dy = enemy.y - cy;
@@ -57,8 +103,11 @@ export class SniperTower extends Tower {
       if (dist < rangeTiles && dist < nearestDist) {
         nearest = enemy;
         nearestDist = dist;
-        targetAngle = Math.atan2(dy, dx);
       }
+    }
+    if (nearest) {
+      predicted = predictEnemyPosition(nearest, cx, cy, this.projectileSpeedTiles);
+      targetAngle = Math.atan2(predicted.y - cy, predicted.x - cx);
     }
     // If no enemy in range, aim at path start point
     if (!nearest && this.pathStart) {
@@ -84,7 +133,7 @@ export class SniperTower extends Tower {
   fireProjectile(cx, cy, projectiles, target) {
     const vx = Math.cos(this.turretAngle) * this.projectileSpeedTiles;
     const vy = Math.sin(this.turretAngle) * this.projectileSpeedTiles;
-    projectiles.push(new SniperProjectile(cx, cy, vx, vy, this.damage, target));
+    projectiles.push(new SniperProjectile(cx, cy, vx, vy, this.damage, target, this.homingStrength, this.level));
   }
 
   render(ctx, selected = false) {
