@@ -30,11 +30,11 @@ export class TrapTowerLevel1 extends Tower {
       }
       // Sort by distance
       inRangeTiles.sort((a, b) => a.dist - b.dist);
-      // Try to place on the closest tile with 0 spikes
+      // Try to place on the closest tile with < 3 spikes
       if (this.cooldown <= 0 && inRangeTiles.length > 0) {
         for (const {tile} of inRangeTiles) {
           const spikesOnTile = this.activeSpikes.filter(s => s.x === tile.x && s.y === tile.y);
-          if (spikesOnTile.length === 0) {
+          if (spikesOnTile.length < 3) {
             this.activeSpikes.push({
               x: tile.x,
               y: tile.y
