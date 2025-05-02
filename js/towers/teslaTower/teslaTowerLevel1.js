@@ -9,7 +9,7 @@ export default class TeslaTowerLevel1 extends Tower {
       level: 1,
       rangeTiles: 100 / 32,
       fireRate: 1 / 1.2,
-      damage: 5,
+      damage: 2,
       targets: 2, // chain length
       special: null,
       cost: 250,

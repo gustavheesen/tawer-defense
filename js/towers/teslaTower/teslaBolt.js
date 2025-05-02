@@ -16,10 +16,19 @@ export class TeslaBolt {
     this.framesAlive++;
     // Only apply effects after 3 frames (after rendering)
     if (this.framesAlive === 4) {
+      // Minimum HP thresholds by level
+      const minHpPercent = [0.5, 0.4, 0.3, 0.2, 0.0];
+      const minHp = (enemy) => enemy.maxHealth * minHpPercent[Math.max(0, Math.min(this.level - 1, 4))];
       for (const enemy of this.chainTargets) {
         if (enemy && enemy.alive) {
           if (typeof enemy.takeDamage === 'function') {
-            enemy.takeDamage(this.damage, 'tesla');
+            // Only allow damage to reduce to the minimum HP threshold
+            const threshold = minHp(enemy);
+            const newHealth = Math.max(enemy.health - this.damage, threshold);
+            const actualDamage = enemy.health - newHealth;
+            if (actualDamage > 0) {
+              enemy.takeDamage(actualDamage, 'tesla');
+            }
           }
           // Optional: stun/slow effect
           if (typeof enemy.stun === 'function') {

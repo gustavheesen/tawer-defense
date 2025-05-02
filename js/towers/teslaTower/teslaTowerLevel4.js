@@ -1,5 +1,6 @@
 // Tesla Tower Level 4
 import { Tower } from '../tower.js';
+import { TeslaBolt } from './teslaBolt.js';
 
 export default class TeslaTowerLevel4 extends Tower {
   constructor(position) {
@@ -8,13 +9,14 @@ export default class TeslaTowerLevel4 extends Tower {
       level: 4,
       rangeTiles: 160 / 32,
       fireRate: 1 / 0.9,
-      damage: 18,
+      damage: 7,
       targets: 5, // chain length
       special: null,
       cost: 700,
       projectileType: 'teslaBolt',
       upgradeTo: 'teslaTowerLevel5',
     });
+    this.position = position;
   }
 
   fireAt(target, enemies, projectiles) {
@@ -43,7 +45,7 @@ export default class TeslaTowerLevel4 extends Tower {
     }
     // Create the TeslaBolt
     const angle = Math.atan2(target.y - this.position.y, target.x - this.position.x);
-    projectiles.push(new (require('./teslaBolt.js').TeslaBolt)(this.position.x, this.position.y, angle, this.damage, chainTargets, this.level));
+    projectiles.push(new TeslaBolt(this.position.x, this.position.y, angle, this.damage, chainTargets, this.level));
   }
 
   fireProjectile(cx, cy, projectiles) {
