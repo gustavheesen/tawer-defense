@@ -1,5 +1,5 @@
 import { Tower } from '../tower.js';
-import { drawTrapTowerBase, drawTrapSpikes } from './trapTowerRender.js';
+import { drawTrapTowerBaseLevel1, drawTrapTowerBaseLevel2, drawTrapTowerBaseLevel3, drawTrapTowerBaseLevel4, drawTrapTowerBaseLevel5, drawTrapSpikes } from './trapTowerRender.js';
 import { drawTrapSpike } from './trapSpikeRender.js';
 
 export class TrapTowerLevel1 extends Tower {
@@ -87,7 +87,12 @@ export class TrapTowerLevel1 extends Tower {
       ctx.restore();
     }
     ctx.save();
-    drawTrapTowerBase(ctx, cx, cy, tileSize);
+    // Choose base render by level
+    if (this.level === 1) drawTrapTowerBaseLevel1(ctx, cx, cy, tileSize);
+    else if (this.level === 2) drawTrapTowerBaseLevel2(ctx, cx, cy, tileSize);
+    else if (this.level === 3) drawTrapTowerBaseLevel3(ctx, cx, cy, tileSize);
+    else if (this.level === 4) drawTrapTowerBaseLevel4(ctx, cx, cy, tileSize);
+    else if (this.level === 5) drawTrapTowerBaseLevel5(ctx, cx, cy, tileSize);
     ctx.restore();
     // Draw spikes
     this.renderSpikes(ctx, tileSize);
@@ -121,7 +126,7 @@ export class TrapTowerLevel1 extends Tower {
     ctx.save();
     if (isValidPlacement) {
       ctx.globalAlpha = 0.5;
-      drawTrapTowerBase(ctx, cx, cy, tileSize);
+      drawTrapTowerBaseLevel1(ctx, cx, cy, tileSize);
     } else {
       ctx.globalAlpha = 0.7;
       ctx.fillStyle = '#ff0000';

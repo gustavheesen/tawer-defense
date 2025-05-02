@@ -5,7 +5,7 @@ import TeslaTowerLevel2 from './teslaTowerLevel2.js';
 import TeslaTowerLevel3 from './teslaTowerLevel3.js';
 import TeslaTowerLevel4 from './teslaTowerLevel4.js';
 import TeslaTowerLevel5 from './teslaTowerLevel5.js';
-import { renderTeslaTower } from './teslaTowerRender.js';
+import { renderTeslaTower, renderTeslaTowerLevel1, renderTeslaTowerLevel2, renderTeslaTowerLevel3, renderTeslaTowerLevel4, renderTeslaTowerLevel5 } from './teslaTowerRender.js';
 
 const LEVEL_CLASSES = [
   TeslaTowerLevel1,
@@ -71,7 +71,11 @@ export class TeslaTower extends Tower {
   }
 
   render(ctx, selected = false) {
-    renderTeslaTower(ctx, this);
+    if (this.level === 1) renderTeslaTowerLevel1(ctx, this);
+    else if (this.level === 2) renderTeslaTowerLevel2(ctx, this);
+    else if (this.level === 3) renderTeslaTowerLevel3(ctx, this);
+    else if (this.level === 4) renderTeslaTowerLevel4(ctx, this);
+    else if (this.level === 5) renderTeslaTowerLevel5(ctx, this);
   }
 
   renderPreview(ctx, tileX, tileY, isValid) {

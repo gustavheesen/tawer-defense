@@ -160,7 +160,7 @@ export class Game {
       case 'cannon': return 50;
       case 'laser': return 80;
       case 'slow': return 60;
-      case 'missile': return 120;
+      case 'missile': return 500;
       case 'sniper': return 200;
       case 'trap': return 60;
       default: return 50;
@@ -253,11 +253,29 @@ export class Game {
       const ghosts = 2 + Math.floor(wave / 2);
       const spiders = 1 + Math.floor(wave / 3);
       const infantry = Math.floor(wave / 3);
+      const bombers = wave >= 6 ? Math.floor((wave - 5) / 2) : 0;
+      const splitters = wave >= 8 ? Math.floor((wave - 7) / 2) : 0;
+      const shielded = wave >= 10 ? Math.floor((wave - 9) / 2) : 0;
+      const regenerating = wave >= 12 ? Math.floor((wave - 11) / 2) : 0;
+      const armored = wave >= 14 ? Math.floor((wave - 13) / 2) : 0;
+      const healers = wave >= 16 ? Math.floor((wave - 15) / 2) : 0;
+      const speedBursts = wave >= 18 ? Math.floor((wave - 17) / 2) : 0;
+      const stealths = wave >= 20 ? Math.floor((wave - 19) / 2) : 0;
+      const emps = wave >= 22 ? Math.floor((wave - 21) / 2) : 0;
       enemiesToSpawn.push(
         ...Array(tanks).fill(() => new TankEnemy(this.path, this.config.map, this.canvas)),
         ...Array(ghosts).fill(() => new GhostEnemy(this.path, this.config.map, this.canvas)),
         ...Array(spiders).fill(() => new SpiderEnemy(this.path, this.config.map, this.canvas)),
-        ...Array(infantry).fill(() => new InfantryEnemy(this.path, this.config.map, this.canvas))
+        ...Array(infantry).fill(() => new InfantryEnemy(this.path, this.config.map, this.canvas)),
+        ...Array(bombers).fill(() => new BomberEnemy(this.path, this.config.map, this.canvas)),
+        ...Array(splitters).fill(() => new SplitterEnemy(this.path, this.config.map, this.canvas)),
+        ...Array(shielded).fill(() => new ShieldedEnemy(this.path, this.config.map, this.canvas)),
+        ...Array(regenerating).fill(() => new RegeneratingEnemy(this.path, this.config.map, this.canvas)),
+        ...Array(armored).fill(() => new ArmoredEnemy(this.path, this.config.map, this.canvas)),
+        ...Array(healers).fill(() => new HealerEnemy(this.path, this.config.map, this.canvas)),
+        ...Array(speedBursts).fill(() => new SpeedBurstEnemy(this.path, this.config.map, this.canvas)),
+        ...Array(stealths).fill(() => new StealthEnemy(this.path, this.config.map, this.canvas)),
+        ...Array(emps).fill(() => new EMPEnemy(this.path, this.config.map, this.canvas))
       );
     }
     // Spawn enemies one after the other, and scale their health by wave
