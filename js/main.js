@@ -359,4 +359,13 @@ Game.prototype.render = function() {
     ctx.restore();
   }
   origRender.call(this);
+};
+
+window.skipWave = function() {
+  const game = window.currentGame;
+  if (!game || !game.running) return;
+  // Remove all current enemies
+  game.enemies = [];
+  // Start next wave
+  game.startWave();
 }; 

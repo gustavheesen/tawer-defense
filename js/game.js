@@ -32,6 +32,8 @@ import { renderSidebarHUD } from './ui/SidebarHUD.js';
 import { BossEnemy } from './enemies/bossEnemy.js';
 import { SniperTower } from './towers/sniperTower/sniperTower.js';
 import { TrapTowerLevel1 } from './towers/trapTower/trapTowerLevel1.js';
+import { SlimeEnemy } from './enemies/slimeEnemy.js';
+import { renderSlimeEnemy } from './enemies/slimeEnemyRenderer.js';
 // import { updateSidebarHUD } from './main.js';
 
 function getPathTiles(path) {
@@ -248,6 +250,45 @@ export class Game {
         ...Array(2).fill(() => new SpiderEnemy(this.path, this.config.map, this.canvas)),
         () => new InfantryEnemy(this.path, this.config.map, this.canvas)
       );
+    } else if (wave === 10) {
+      enemiesToSpawn.push(
+        ...Array(3).fill(() => new TankEnemy(this.path, this.config.map, this.canvas)),
+        ...Array(3).fill(() => new GhostEnemy(this.path, this.config.map, this.canvas)),
+        ...Array(2).fill(() => new SpiderEnemy(this.path, this.config.map, this.canvas)),
+        () => new InfantryEnemy(this.path, this.config.map, this.canvas),
+        ...Array(2).fill(() => new SlimeEnemy(this.path, this.config.map, this.canvas))
+      );
+    } else if (wave > 10) {
+      const tanks = 3 + Math.floor(wave / 2);
+      const ghosts = 2 + Math.floor(wave / 2);
+      const spiders = 1 + Math.floor(wave / 3);
+      const infantry = Math.floor(wave / 3);
+      const bombers = wave >= 6 ? Math.floor((wave - 5) / 2) : 0;
+      const splitters = wave >= 8 ? Math.floor((wave - 7) / 2) : 0;
+      const shielded = wave >= 10 ? Math.floor((wave - 9) / 2) : 0;
+      const regenerating = wave >= 12 ? Math.floor((wave - 11) / 2) : 0;
+      const armored = wave >= 14 ? Math.floor((wave - 13) / 2) : 0;
+      const healers = wave >= 16 ? Math.floor((wave - 15) / 2) : 0;
+      const speedBursts = wave >= 18 ? Math.floor((wave - 17) / 2) : 0;
+      const stealths = wave >= 20 ? Math.floor((wave - 19) / 2) : 0;
+      const emps = wave >= 22 ? Math.floor((wave - 21) / 2) : 0;
+      const slimes = 1 + Math.floor((wave - 10) / 2);
+      enemiesToSpawn.push(
+        ...Array(tanks).fill(() => new TankEnemy(this.path, this.config.map, this.canvas)),
+        ...Array(ghosts).fill(() => new GhostEnemy(this.path, this.config.map, this.canvas)),
+        ...Array(spiders).fill(() => new SpiderEnemy(this.path, this.config.map, this.canvas)),
+        ...Array(infantry).fill(() => new InfantryEnemy(this.path, this.config.map, this.canvas)),
+        ...Array(bombers).fill(() => new BomberEnemy(this.path, this.config.map, this.canvas)),
+        ...Array(splitters).fill(() => new SplitterEnemy(this.path, this.config.map, this.canvas)),
+        ...Array(shielded).fill(() => new ShieldedEnemy(this.path, this.config.map, this.canvas)),
+        ...Array(regenerating).fill(() => new RegeneratingEnemy(this.path, this.config.map, this.canvas)),
+        ...Array(armored).fill(() => new ArmoredEnemy(this.path, this.config.map, this.canvas)),
+        ...Array(healers).fill(() => new HealerEnemy(this.path, this.config.map, this.canvas)),
+        ...Array(speedBursts).fill(() => new SpeedBurstEnemy(this.path, this.config.map, this.canvas)),
+        ...Array(stealths).fill(() => new StealthEnemy(this.path, this.config.map, this.canvas)),
+        ...Array(emps).fill(() => new EMPEnemy(this.path, this.config.map, this.canvas)),
+        ...Array(slimes).fill(() => new SlimeEnemy(this.path, this.config.map, this.canvas))
+      );
     } else {
       const tanks = 3 + Math.floor(wave / 2);
       const ghosts = 2 + Math.floor(wave / 2);
@@ -327,6 +368,8 @@ export class Game {
       // HealerEnemy: pass all enemies for healing
       if (enemy instanceof HealerEnemy) {
         enemy.update(delta, this.enemies);
+      } else if (enemy instanceof SlimeEnemy) {
+        enemy.update(delta, this.towers);
       } else {
         enemy.update(delta);
       }
@@ -417,7 +460,11 @@ export class Game {
     
     // Render enemies
     for (const enemy of this.enemies) {
-      enemy.render(this.ctx);
+      if (enemy instanceof SlimeEnemy) {
+        renderSlimeEnemy(enemy, this.ctx);
+      } else {
+        enemy.render(this.ctx);
+      }
     }
     
     // Render projectiles

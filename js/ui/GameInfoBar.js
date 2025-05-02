@@ -46,8 +46,11 @@ export function renderGameInfoBar(game, container) {
       <span>Lives: <span id="info-lives">${game.lives}</span></span>
       <span>Wave: <span id="info-wave">${game.currentWave}</span></span>
       <span>Money: <span id="info-money">$${game.money}</span></span>
+      <button id="skip-wave-btn" style="margin-left:16px; padding:4px 14px; font-size:1em; background:#4fc3f7; color:#222; border:none; border-radius:6px; cursor:pointer; font-weight:bold;">Skip Wave</button>
     </div>
   `;
+  const skipBtn = document.getElementById('skip-wave-btn');
+  if (skipBtn) skipBtn.onclick = () => window.skipWave && window.skipWave();
 }
 
 export function updateGameInfoBar(game) {

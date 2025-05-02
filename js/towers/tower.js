@@ -18,6 +18,7 @@ export class Tower {
   }
 
   update(delta, enemies, projectiles) {
+    if (this.disabled) return; // Skip update if disabled
     console.log('[Tower] update called', this.name || this.constructor.name, this);
     this.cooldown -= delta;
     // Center of tower in tile units
