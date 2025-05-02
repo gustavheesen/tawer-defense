@@ -26,15 +26,29 @@ export class Enemy {
 
   takeDamage(amount, type = 'projectile') {
     this.health -= amount;
+    if (isNaN(this.health)) {
+      console.warn('Enemy health became NaN!', this, amount, type);
+      this.health = 0;
+    }
+    if (this.health < 0) this.health = 0;
+    if (this.health > this.maxHealth) this.health = this.maxHealth;
     if (this.health <= 0) {
       this.alive = false;
     }
   }
 
   update(delta) {
-    if (this.empStunned && this.empStunned > 0) {
-      this.empStunned -= delta;
-      if (this.empStunned < 0) this.empStunned = 0;
+    if (this.stunned && this.stunned > 0) {
+      this.stunned -= delta;
+      if (this.stunned < 0) this.stunned = 0;
+      return; // Skip movement and actions while stunned
+    }
+    if (this.slowed && this.slowed > 0) {
+      this.slowed -= delta;
+      if (this.slowed <= 0) {
+        this.slowed = 0;
+        if (this._originalSpeed) this.speed = this._originalSpeed;
+      }
     }
     if (this.disabled && this.disabled > 0) {
       this.disabled -= delta;
@@ -75,7 +89,7 @@ export class Enemy {
     const px = this.x * tileSize + tileSize / 2;
     const py = this.y * tileSize + tileSize / 2;
     ctx.save();
-    if (this.empStunned && this.empStunned > 0) {
+    if (this.stunned && this.stunned > 0) {
       ctx.shadowColor = '#81d4fa';
       ctx.shadowBlur = 24;
     }
@@ -93,5 +107,19 @@ export class Enemy {
     ctx.strokeStyle = '#222';
     ctx.strokeRect(px - tileSize * 0.3, py - tileSize * 0.6 - 10, tileSize * 0.6, 6);
     ctx.restore();
+  }
+
+  // Add this method to prevent Tesla Tower from breaking enemies
+  stun(duration) {
+    // Default: set a stun timer, but do not affect health or invulnerability
+    this.stunned = duration;
+  }
+
+  // Add this method to prevent Tesla Tower from breaking enemies
+  slow(factor, duration) {
+    // Default: reduce speed for a short time, then restore
+    if (!this._originalSpeed) this._originalSpeed = this.speed;
+    this.speed = this._originalSpeed * factor;
+    this.slowed = duration;
   }
 } 

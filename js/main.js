@@ -5,6 +5,8 @@ import { CannonTower } from './towers/cannonTower.js';
 import { MissileSilo } from './towers/missileSilo.js';
 import { SniperTower } from './towers/sniperTower/sniperTower.js';
 import { TrapTowerLevel1 } from './towers/trapTower/trapTowerLevel1.js';
+import TeslaTower from './towers/teslaTower/teslaTower.js';
+console.log('TeslaTower imported:', TeslaTower);
 import { setupUI } from './ui.js';
 import { renderTowerSelectionHUD } from './ui/TowerSelectionHUD.js';
 import { generateRandomPath } from './maps/randomPath.js';
@@ -28,6 +30,7 @@ window.CannonTower = CannonTower;
 window.MissileSilo = MissileSilo;
 window.SniperTower = SniperTower;
 window.TrapTowerLevel1 = TrapTowerLevel1;
+window.TeslaTower = TeslaTower;
 
 // Register tower classes for selection UI
 const TOWER_CLASSES = {
@@ -37,7 +40,9 @@ const TOWER_CLASSES = {
   missile: MissileSilo,
   sniper: SniperTower,
   trap: TrapTowerLevel1,
+  tesla: TeslaTower,
 };
+console.log('TOWER_CLASSES:', TOWER_CLASSES);
 
 function showIntroMenu() {
   previewWidth = lastGridWidth;
@@ -271,6 +276,7 @@ function startGameWithPath(mode, width, height, pathOverride) {
   // TODO: For 'draw', implement custom path drawing UI
   const config = { ...loadConfig(), map: { width, height } };
   const game = new Game(canvas, ctx, config, path);
+  game.TOWER_CLASSES = TOWER_CLASSES;
   setupUI(game);
   renderSidebarHUD(game, document.getElementById('sidebar'));
   // Render the tower selection HUD in the sidebar
@@ -353,7 +359,4 @@ Game.prototype.render = function() {
     ctx.restore();
   }
   origRender.call(this);
-};
-
-// Patch Game to use TOWER_CLASSES
-Game.prototype.TOWER_CLASSES = TOWER_CLASSES; 
+}; 

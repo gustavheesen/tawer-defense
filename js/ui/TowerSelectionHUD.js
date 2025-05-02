@@ -85,11 +85,15 @@ export function renderTowerSelectionHUD(game, container) {
         <canvas id="trap-preview"></canvas>
         <div class="tower-cost">$${game.getTowerCost ? game.getTowerCost('trap') : 60}</div>
       </div>
+      <div class="tower-preview" data-tower="tesla">
+        <canvas id="tesla-preview"></canvas>
+        <div class="tower-cost">$${game.getTowerCost ? game.getTowerCost('tesla') : 300}</div>
+      </div>
     </div>
   `;
 
   // Use each tower's renderPreview method for the HUD preview
-  const previewTypes = ['cannon', 'laser', 'slow', 'missile', 'sniper', 'trap'];
+  const previewTypes = ['cannon', 'laser', 'slow', 'missile', 'sniper', 'trap', 'tesla'];
   previewTypes.forEach(type => {
     const canvas = document.getElementById(`${type}-preview`);
     const previewDiv = canvas.parentElement;
@@ -97,6 +101,10 @@ export function renderTowerSelectionHUD(game, container) {
     canvas.height = 40;
     const ctx = canvas.getContext('2d');
     const TowerClass = game.TOWER_CLASSES[type];
+    if (!TowerClass) {
+      console.error('TowerClass not found for type:', type, game.TOWER_CLASSES);
+      return;
+    }
     // Create a dummy tower at (0,0) with a dummy map config and canvas
     const dummyMap = { width: 1, height: 1 };
     const previewTower = new TowerClass(0, 0, dummyMap, canvas, []);
