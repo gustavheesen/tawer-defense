@@ -22,6 +22,7 @@ export class Enemy {
     this.x = this.tileX; // float, in tile units
     this.y = this.tileY; // float, in tile units
     this.reachedEnd = false;
+    this.barrierBlocked = 0; // New: time left being blocked by a barrier
   }
 
   takeDamage(amount, type = 'projectile') {
@@ -37,7 +38,12 @@ export class Enemy {
     }
   }
 
-  update(delta) {
+  update(delta, towers = []) {
+    if (this.barrierBlocked && this.barrierBlocked > 0) {
+      this.barrierBlocked -= delta;
+      if (this.barrierBlocked < 0) this.barrierBlocked = 0;
+      return; // Skip movement while blocked by barrier
+    }
     if (this.stunned && this.stunned > 0) {
       this.stunned -= delta;
       if (this.stunned < 0) this.stunned = 0;
@@ -54,6 +60,46 @@ export class Enemy {
       this.disabled -= delta;
       if (this.disabled < 0) this.disabled = 0;
       return; // Skip movement and actions while disabled
+    }
+    // Diagnostic: print all towers and their types
+    if (towers && towers.length) {
+      console.log('All towers:', towers.map(t => ({type: t.type, tileX: t.tileX, tileY: t.tileY, active: t.active})));
+    }
+    // Barrier logic: stop if a barrier tower is on the current or next tile (unless ghost)
+    if (!this.ghost && towers) {
+      const barriers = towers.filter(t => t.type === 'barrier' && t.active !== false);
+      const currentTile = { x: Math.floor(this.x), y: Math.floor(this.y) };
+      let blocked = false;
+      if (barriers.some(t => t.tileX === currentTile.x && t.tileY === currentTile.y)) {
+        console.log('ENEMY STOPPED: Current tile blocked by barrier', currentTile.x, currentTile.y);
+        blocked = true;
+      }
+      if (this.pathIndex < this.path.length - 1) {
+        const nextTile = this.path[this.pathIndex + 1];
+        if (barriers.some(t => t.tileX === nextTile.x && t.tileY === nextTile.y)) {
+          console.log('ENEMY STOPPED: Next tile blocked by barrier', nextTile.x, nextTile.y);
+          blocked = true;
+        }
+        console.log('Enemy at', currentTile.x, currentTile.y, 'Next tile:', nextTile.x, nextTile.y, 'Barriers:', barriers.map(b => ({tileX: b.tileX, tileY: b.tileY, active: b.active})), 'Blocked:', blocked);
+        console.log('Enemy path:', this.path.map(t => ({x: t.x, y: t.y})));
+      }
+      if (blocked) return;
+    }
+    // Force stop if enemy is touching (overlapping) a barrier
+    if (!this.ghost && towers) {
+      const barriers = towers.filter(t => t.type === 'barrier' && t.active !== false);
+      const tileSize = this.canvas ? (this.canvas.width / this.mapConfig.width) : 32;
+      const enemyPx = this.x * tileSize + tileSize / 2;
+      const enemyPy = this.y * tileSize + tileSize / 2;
+      for (const barrier of barriers) {
+        const barrierPx = barrier.tileX * tileSize + tileSize / 2;
+        const barrierPy = barrier.tileY * tileSize + tileSize / 2;
+        const dist = Math.sqrt((enemyPx - barrierPx) ** 2 + (enemyPy - barrierPy) ** 2);
+        if (dist < tileSize * 0.5) { // Overlapping or very close
+          console.log('ENEMY STOPPED: Touching barrier at', barrier.tileX, barrier.tileY);
+          return;
+        }
+      }
     }
     // Move along path (tile-based)
     if (this.pathIndex < this.path.length - 1) {

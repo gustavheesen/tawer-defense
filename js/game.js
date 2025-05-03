@@ -165,7 +165,15 @@ export class Game {
       case 'missile': return 500;
       case 'sniper': return 200;
       case 'trap': return 60;
+      case 'barrier': return 80;
       default: return 50;
+    }
+  }
+
+  removeTower(tower) {
+    const idx = this.towers.indexOf(tower);
+    if (idx !== -1) {
+      this.towers.splice(idx, 1);
     }
   }
 
@@ -184,7 +192,7 @@ export class Game {
     const tileY = Math.floor(y / tileSize);
 
     // Check if placement is valid
-    if (this.pathTiles.has(`${tileX},${tileY}`)) {
+    if (this.selectedTowerType !== 'barrier' && this.pathTiles.has(`${tileX},${tileY}`)) {
       //console.log('Cannot place tower on path');
       return;
     }
@@ -203,7 +211,9 @@ export class Game {
     // Place the tower
     this.money -= cost;
     const TowerClass = this.TOWER_CLASSES[this.selectedTowerType];
-    this.towers.push(new TowerClass(tileX, tileY, this.config.map, this.canvas, this.path));
+    const newTower = new TowerClass(tileX, tileY, this.config.map, this.canvas, this.path);
+    this.towers.push(newTower);
+    console.log('Placed tower:', newTower);
     updateGameInfoBar(this);
   }
 
@@ -358,9 +368,9 @@ export class Game {
             const [x, y] = key.split(',').map(Number);
             return { x, y };
           });
-        tower.update(delta, this.enemies, this.projectiles, pathTilesArr);
+        tower.update(delta, this.enemies, this.projectiles, pathTilesArr, this);
       } else {
-        tower.update(delta, this.enemies, this.projectiles);
+        tower.update(delta, this.enemies, this.projectiles, this);
       }
     }
     // Update enemies
@@ -371,7 +381,7 @@ export class Game {
       } else if (enemy instanceof SlimeEnemy) {
         enemy.update(delta, this.towers);
       } else {
-        enemy.update(delta);
+        enemy.update(delta, this.towers);
       }
     }
     // Handle special deaths before removing dead enemies

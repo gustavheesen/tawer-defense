@@ -6,6 +6,7 @@ import { MissileSilo } from './towers/missileSilo.js';
 import { SniperTower } from './towers/sniperTower/sniperTower.js';
 import { TrapTowerLevel1 } from './towers/trapTower/trapTowerLevel1.js';
 import TeslaTower from './towers/teslaTower/teslaTower.js';
+import BarrierTower from './towers/barrierTower/barrierTower.js';
 console.log('TeslaTower imported:', TeslaTower);
 import { setupUI } from './ui.js';
 import { renderTowerSelectionHUD } from './ui/TowerSelectionHUD.js';
@@ -31,6 +32,7 @@ window.MissileSilo = MissileSilo;
 window.SniperTower = SniperTower;
 window.TrapTowerLevel1 = TrapTowerLevel1;
 window.TeslaTower = TeslaTower;
+window.BarrierTower = BarrierTower;
 
 // Register tower classes for selection UI
 const TOWER_CLASSES = {
@@ -41,6 +43,7 @@ const TOWER_CLASSES = {
   sniper: SniperTower,
   trap: TrapTowerLevel1,
   tesla: TeslaTower,
+  barrier: BarrierTower,
 };
 console.log('TOWER_CLASSES:', TOWER_CLASSES);
 
