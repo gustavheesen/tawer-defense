@@ -1,3 +1,4 @@
+// DEPRECATED: Do not use this BossEnemy class. Use the specific boss classes (e.g., BossTankEnemy, BossSlimeEnemy, etc.) for proper path following and behavior.
 import { Enemy } from './enemy.js';
 import { getTileSize } from '../utils.js';
 

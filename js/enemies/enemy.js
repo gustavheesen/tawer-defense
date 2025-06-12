@@ -102,27 +102,30 @@ export class Enemy {
       }
     }
     // Move along path (tile-based)
-    if (this.pathIndex < this.path.length - 1) {
+    let remainingMove = this.speed * delta;
+    while (remainingMove > 0 && this.pathIndex < this.path.length - 1) {
       const targetTile = this.path[this.pathIndex + 1];
       const targetX = targetTile.x;
       const targetY = targetTile.y;
       const dx = targetX - this.x;
       const dy = targetY - this.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
-      const moveDist = this.speed * delta; // speed (tiles/sec) * delta
-      if (dist < moveDist) {
+      if (dist <= remainingMove) {
         this.x = targetX;
         this.y = targetY;
         this.tileX = targetX;
         this.tileY = targetY;
         this.pathIndex++;
+        remainingMove -= dist;
       } else {
-        this.x += (dx / dist) * moveDist;
-        this.y += (dy / dist) * moveDist;
+        this.x += (dx / dist) * remainingMove;
+        this.y += (dy / dist) * remainingMove;
         this.tileX = Math.round(this.x);
         this.tileY = Math.round(this.y);
+        remainingMove = 0;
       }
-    } else {
+    }
+    if (this.pathIndex >= this.path.length - 1) {
       // Reached end of path
       this.alive = false;
       this.reachedEnd = true;

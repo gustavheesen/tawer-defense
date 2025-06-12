@@ -29,7 +29,34 @@ import { ClusterMissileProjectile } from './projectiles/clusterMissileProjectile
 import { EMPMissileProjectile } from './projectiles/empMissileProjectile.js';
 import { updateGameInfoBar } from './ui/GameInfoBar.js';
 import { renderSidebarHUD } from './ui/SidebarHUD.js';
-import { BossEnemy } from './enemies/bossEnemy.js';
+import { BossTankEnemy } from './enemies/bossTankEnemy.js';
+import { BossGhostEnemy } from './enemies/bossGhostEnemy.js';
+import { BossSpiderEnemy } from './enemies/bossSpiderEnemy.js';
+import { BossInfantryEnemy } from './enemies/bossInfantryEnemy.js';
+import { renderBossTankEnemy } from './enemies/bossTankEnemyRenderer.js';
+import { renderBossGhostEnemy } from './enemies/bossGhostEnemyRenderer.js';
+import { renderBossSpiderEnemy } from './enemies/bossSpiderEnemyRenderer.js';
+import { renderBossInfantryEnemy } from './enemies/bossInfantryEnemyRenderer.js';
+import { BossRegeneratingEnemy } from './enemies/bossRegeneratingEnemy.js';
+import { BossSpeedBurstEnemy } from './enemies/bossSpeedBurstEnemy.js';
+import { renderBossRegeneratingEnemy } from './enemies/bossRegeneratingEnemyRenderer.js';
+import { renderBossSpeedBurstEnemy } from './enemies/bossSpeedBurstEnemyRenderer.js';
+import { BossArmoredEnemy } from './enemies/bossArmoredEnemy.js';
+import { BossHealerEnemy } from './enemies/bossHealerEnemy.js';
+import { renderBossArmoredEnemy } from './enemies/bossArmoredEnemyRenderer.js';
+import { renderBossHealerEnemy } from './enemies/bossHealerEnemyRenderer.js';
+import { BossShieldedEnemy } from './enemies/bossShieldedEnemy.js';
+import { BossEMPEnemy } from './enemies/bossEMPEnemy.js';
+import { renderBossShieldedEnemy } from './enemies/bossShieldedEnemyRenderer.js';
+import { renderBossEMPEnemy } from './enemies/bossEMPEnemyRenderer.js';
+import { BossBomberEnemy } from './enemies/bossBomberEnemy.js';
+import { BossSplitterEnemy } from './enemies/bossSplitterEnemy.js';
+import { BossStealthEnemy } from './enemies/bossStealthEnemy.js';
+import { renderBossBomberEnemy } from './enemies/bossBomberEnemyRenderer.js';
+import { renderBossSplitterEnemy } from './enemies/bossSplitterEnemyRenderer.js';
+import { renderBossStealthEnemy } from './enemies/bossStealthEnemyRenderer.js';
+import { BossSlimeEnemy } from './enemies/bossSlimeEnemy.js';
+import { renderBossSlimeEnemy } from './enemies/bossSlimeEnemyRenderer.js';
 import { SniperTower } from './towers/sniperTower/sniperTower.js';
 import { TrapTowerLevel1 } from './towers/trapTower/trapTowerLevel1.js';
 import { SlimeEnemy } from './enemies/slimeEnemy.js';
@@ -166,6 +193,7 @@ export class Game {
       case 'sniper': return 200;
       case 'trap': return 60;
       case 'barrier': return 80;
+      case 'tesla': return 50;
       default: return 50;
     }
   }
@@ -225,11 +253,27 @@ export class Game {
   startWave() {
     const wave = this.currentWave;
     let enemiesToSpawn = [];
-    // Boss every 5th wave
+    // Boss every 5th wave: only boss enemy, type cycles
     if (wave % 5 === 0) {
-      enemiesToSpawn.push(() => new BossEnemy(this.path, this.config.map, this.canvas));
-    }
-    if (wave === 1) {
+      const bossTypes = [
+        BossTankEnemy,
+        BossGhostEnemy,
+        BossSpiderEnemy,
+        BossInfantryEnemy,
+        BossRegeneratingEnemy,
+        BossSpeedBurstEnemy,
+        BossArmoredEnemy,
+        BossHealerEnemy,
+        BossShieldedEnemy,
+        BossEMPEnemy,
+        BossBomberEnemy,
+        BossSplitterEnemy,
+        BossStealthEnemy,
+        BossSlimeEnemy
+      ];
+      const bossType = bossTypes[((wave / 5 - 1) % bossTypes.length)];
+      enemiesToSpawn.push(() => new bossType(this.path, this.config.map, this.canvas));
+    } else if (wave === 1) {
       enemiesToSpawn.push(
         () => new TankEnemy(this.path, this.config.map, this.canvas),
         () => new TankEnemy(this.path, this.config.map, this.canvas)
@@ -389,7 +433,7 @@ export class Game {
     for (const enemy of this.enemies) {
       if (!enemy.alive) {
         // BomberEnemy: explode and damage towers in 1-tile radius
-        if (enemy instanceof BomberEnemy && !enemy.exploded) {
+        if ((enemy instanceof BomberEnemy || enemy instanceof BossBomberEnemy) && !enemy.exploded) {
           const tileSize = Math.min(this.canvas.width / this.config.map.width, this.canvas.height / this.config.map.height);
           const ex = enemy.x;
           const ey = enemy.y;
@@ -397,14 +441,14 @@ export class Game {
             const tx = tower.tileX * tileSize + tileSize / 2;
             const ty = tower.tileY * tileSize + tileSize / 2;
             const dist = Math.sqrt((tx - ex) ** 2 + (ty - ey) ** 2);
-            if (dist < tileSize * 1.2) {
+            if (dist < (enemy.explosionRadius || tileSize * 1.2)) {
               tower.health = (tower.health || 3) - 1;
             }
           }
           enemy.exploded = true;
         }
         // SplitterEnemy: split into two MiniSplitters
-        if (enemy instanceof SplitterEnemy) {
+        if (enemy instanceof SplitterEnemy && !(enemy instanceof BossSplitterEnemy)) {
           for (let i = 0; i < 2; i++) {
             const mini = new MiniSplitterEnemy(this.path, this.config.map, this.canvas);
             mini.x = enemy.x + (i === 0 ? -8 : 8);
@@ -412,8 +456,16 @@ export class Game {
             newEnemies.push(mini);
           }
         }
+        // BossSplitterEnemy: split into four MiniSplitters
+        if (enemy instanceof BossSplitterEnemy && typeof enemy.onDeath === 'function') {
+          enemy.onDeath(this);
+        }
+        // BossSlimeEnemy: split into four strong slimes
+        if (enemy instanceof BossSlimeEnemy && typeof enemy.onDeath === 'function') {
+          enemy.onDeath(this);
+        }
         // EMPEnemy: disable towers in radius
-        if (enemy instanceof EMPEnemy && !enemy.empTriggered) {
+        if ((enemy instanceof EMPEnemy || enemy instanceof BossEMPEnemy) && !enemy.empTriggered) {
           enemy.triggerEMP(this);
         }
         // GhostEnemy: no special death logic
@@ -472,6 +524,34 @@ export class Game {
     for (const enemy of this.enemies) {
       if (enemy instanceof SlimeEnemy) {
         renderSlimeEnemy(enemy, this.ctx);
+      } else if (enemy instanceof BossTankEnemy) {
+        renderBossTankEnemy(enemy, this.ctx);
+      } else if (enemy instanceof BossGhostEnemy) {
+        renderBossGhostEnemy(enemy, this.ctx);
+      } else if (enemy instanceof BossSpiderEnemy) {
+        renderBossSpiderEnemy(enemy, this.ctx);
+      } else if (enemy instanceof BossInfantryEnemy) {
+        renderBossInfantryEnemy(enemy, this.ctx);
+      } else if (enemy instanceof BossRegeneratingEnemy) {
+        renderBossRegeneratingEnemy(enemy, this.ctx);
+      } else if (enemy instanceof BossSpeedBurstEnemy) {
+        renderBossSpeedBurstEnemy(enemy, this.ctx);
+      } else if (enemy instanceof BossArmoredEnemy) {
+        renderBossArmoredEnemy(enemy, this.ctx);
+      } else if (enemy instanceof BossHealerEnemy) {
+        renderBossHealerEnemy(enemy, this.ctx);
+      } else if (enemy instanceof BossShieldedEnemy) {
+        renderBossShieldedEnemy(enemy, this.ctx);
+      } else if (enemy instanceof BossEMPEnemy) {
+        renderBossEMPEnemy(enemy, this.ctx);
+      } else if (enemy instanceof BossBomberEnemy) {
+        renderBossBomberEnemy(enemy, this.ctx);
+      } else if (enemy instanceof BossSplitterEnemy) {
+        renderBossSplitterEnemy(enemy, this.ctx);
+      } else if (enemy instanceof BossStealthEnemy) {
+        renderBossStealthEnemy(enemy, this.ctx);
+      } else if (enemy instanceof BossSlimeEnemy) {
+        renderBossSlimeEnemy(enemy, this.ctx);
       } else {
         enemy.render(this.ctx);
       }
